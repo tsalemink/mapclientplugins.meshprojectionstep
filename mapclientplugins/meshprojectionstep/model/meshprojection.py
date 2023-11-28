@@ -1,8 +1,7 @@
 import math
 
 import numpy as np
-
-from cmlibs.maths.vectorops import dot, magnitude, cross, add, sub, mult, normalize, axis_angle_to_rotation_matrix, matrix_vector_mult
+from cmlibs.maths.vectorops import dot, magnitude, cross, add, sub, mult, axis_angle_to_rotation_matrix, matrix_vector_mult
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
@@ -74,6 +73,20 @@ class MeshProjectionModel(object):
         return self._mesh
 
     def write_projected_mesh(self, location):
+
+        # Rotate to the x-y plane.
+        xy_normal = [0, 0, 1]
+        rot_mx = _define_rotation_matrix(xy_normal, self._projection_plane_normal)
+        # add(matrix_vector_mult(rot_mx, pt), point_on_plane)
+
+        def _transform_value(value):
+            return matrix_vector_mult(rot_mx, sub(self._projection_plane_point, value))
+
+        def _transform_parameter(value):
+            return matrix_vector_mult(rot_mx, value)
+
+        _transform_node_values(self._projected_region, "coordinates", _transform_value, _transform_parameter)
+
         self._projected_region.writeFile(location)
 
     def _create_selection_filter(self):
@@ -137,7 +150,7 @@ class MeshProjectionModel(object):
         element_points = [[n_h_m_d, n_h_m_d, 0], [p_h_m_d, n_h_m_d, 0], [n_h_m_d, p_h_m_d, 0], [p_h_m_d, p_h_m_d, 0]]
         element_normal = [0, 0, 1.0]
 
-        rot_mx = define_rotation_matrix(plane_normal, element_normal)
+        rot_mx = _define_rotation_matrix(plane_normal, element_normal)
         rot_element_points = [add(matrix_vector_mult(rot_mx, pt), point_on_plane) for pt in element_points]
 
         with ChangeManager(fm):
@@ -146,12 +159,6 @@ class MeshProjectionModel(object):
             create_square_element(mesh, coordinate_field, rot_element_points)
 
     def project(self, coordinate_field_name):
-        fm = self._projected_region.getFieldmodule()
-        fc = fm.createFieldcache()
-
-        nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        coordinates = fm.findFieldByName(coordinate_field_name).castFiniteElement()
-        node_iter = nodes.createNodeiterator()
 
         def _project_point(pt):
             v = sub(pt, self._projection_plane_point)
@@ -162,30 +169,41 @@ class MeshProjectionModel(object):
             dist = dot(vec, self._projection_plane_normal)
             return sub(vec, mult(self._projection_plane_normal, dist))
 
-        node_derivatives = [Node.VALUE_LABEL_D_DS1, Node.VALUE_LABEL_D_DS2, Node.VALUE_LABEL_D_DS3,
-                            Node.VALUE_LABEL_D2_DS1DS2, Node.VALUE_LABEL_D2_DS1DS3, Node.VALUE_LABEL_D2_DS2DS3, Node.VALUE_LABEL_D3_DS1DS2DS3]
-        derivatives_count = len(node_derivatives)
-        components_count = coordinates.getNumberOfComponents()
+        _transform_node_values(self._projected_region, coordinate_field_name, _project_point, _project_vector)
 
-        with ChangeManager(fm):
+
+def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn):
+    fm = region.getFieldmodule()
+    fc = fm.createFieldcache()
+    node_derivatives = [Node.VALUE_LABEL_D_DS1, Node.VALUE_LABEL_D_DS2, Node.VALUE_LABEL_D_DS3,
+                        Node.VALUE_LABEL_D2_DS1DS2, Node.VALUE_LABEL_D2_DS1DS3, Node.VALUE_LABEL_D2_DS2DS3, Node.VALUE_LABEL_D3_DS1DS2DS3]
+    derivatives_count = len(node_derivatives)
+
+    nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+    node_iter = nodes.createNodeiterator()
+
+    coordinates = fm.findFieldByName(coordinate_field_name).castFiniteElement()
+    components_count = coordinates.getNumberOfComponents()
+
+    with ChangeManager(fm):
+
+        node = node_iter.next()
+        while node.isValid():
+            fc.setNode(node)
+            result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
+            if result == RESULT_OK:
+                proj_x = _node_values_fcn(x)
+                coordinates.assignReal(fc, proj_x)
+                for d in range(derivatives_count):
+                    result, values = coordinates.getNodeParameters(fc, -1, node_derivatives[d], 1, components_count)
+                    if result == RESULT_OK:
+                        proj_param = _node_parameters_fcn(values)
+                        coordinates.setNodeParameters(fc, -1, node_derivatives[d], 1, proj_param)
 
             node = node_iter.next()
-            while node.isValid():
-                fc.setNode(node)
-                result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
-                if result == RESULT_OK:
-                    proj_x = _project_point(x)
-                    coordinates.assignReal(fc, proj_x)
-                    for d in range(derivatives_count):
-                        result, values = coordinates.getNodeParameters(fc, -1, node_derivatives[d], 1, components_count)
-                        if result == RESULT_OK:
-                            proj_param = _project_vector(values)
-                            coordinates.setNodeParameters(fc, -1, node_derivatives[d], 1, proj_param)
-
-                node = node_iter.next()
 
 
-def define_rotation_matrix(normal1, normal2):
+def _define_rotation_matrix(normal1, normal2):
     normal_dot_product = dot(normal1, normal2)
     normal1_length = magnitude(normal1)
     normal2_length = magnitude(normal2)
