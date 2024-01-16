@@ -3,24 +3,18 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import colorsys
 import os
 import json
 
 import numpy as np
 from PySide6 import QtWidgets, QtCore
-from cmlibs.utils.zinc.finiteelement import get_identifiers
 
-from cmlibs.utils.zinc.general import ChangeManager
-from cmlibs.utils.zinc.region import copy_nodeset
-from cmlibs.utils.zinc.scene import scene_get_or_create_selection_group
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
-from cmlibs.zinc.field import Field
-from cmlibs.zinc.field import FieldFindMeshLocation
-from cmlibs.zinc.material import Material
+from cmlibs.widgets.handlers.sceneselection import SceneSelection
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
+from mapclientplugins.meshprojectionstep.handlers.orientation import Orientation
 
 
 class ZincFieldListModel(QtCore.QAbstractListModel):
@@ -78,9 +72,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.set_grab_focus(True)
         self._ui.widgetZinc.set_context(model.get_context())
         self._ui.widgetZinc.register_handler(SceneManipulation())
+        self._ui.widgetZinc.register_handler(SceneSelection(QtCore.Qt.Key.Key_S))
 
         self._update_ui()
-        # self._ui.widgetZinc.register_handler(self._selection_handler)
 
     def set_identifier(self, identifier):
         self._ui.labelMeshProjectionIdentifier.setText(identifier)
@@ -168,6 +162,10 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.create_projection_plane()
         self._update_ui()
 
+        orientation_handler = Orientation(QtCore.Qt.Key.Key_R)
+        orientation_handler.set_model(self._model)
+        self._ui.widgetZinc.register_handler(orientation_handler)
+
     def _project_clicked(self):
         coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
         self._model.project(coordinate_field_name)
@@ -213,4 +211,3 @@ def _calculate_best_fit_plane(points):
     U, S, Vh = np.linalg.svd(actual_points - centroid)
 
     return centroid.reshape(-1).tolist(), U[:, -1].tolist()
-
