@@ -25,7 +25,8 @@ class Orientation(KeyActivatedHandler):
         self._start_position = None
 
     def set_model(self, model):
-        if all(hasattr(model, attr) for attr in ['get_projection_plane_region', 'set_rotation_point', 'set_plane_normal']):
+        attributes = ['get_projection_plane_region', 'get_rotation_point', 'set_rotation_point', 'get_plane_normal', 'set_plane_normal']
+        if all(hasattr(model, attr) for attr in attributes):
             self._model = model
 
             self._glyph = create_plane_manipulation_sphere(model.get_projection_plane_region())

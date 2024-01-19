@@ -26,8 +26,9 @@ class MeshProjectionModel(object):
         self._projected_region = self._root_region.createChild("projected")
         self._projection_plane_region = self._root_region.createChild("projection_plane")
 
-        self._projection_plane_normal = None
         self._projection_plane_point = None
+        self._projection_plane_normal = None
+        self._normal_field = None
 
         self.define_standard_materials()
         self.define_standard_glyphs()
@@ -142,6 +143,11 @@ class MeshProjectionModel(object):
         self._projection_plane_normal = plane_normal
         self._projection_plane_point = point_on_plane
 
+        field_module = self.get_projection_plane_region().getFieldmodule()
+        field_cache = field_module.createFieldcache()
+        self._normal_field = field_module.createFieldConstant([0, 0, 1])
+        self._normal_field.assignReal(field_cache, plane_normal)
+
         max_dimension = max(plane_size)
         half_max_dimension = max_dimension / 2
         p_h_m_d = half_max_dimension
@@ -160,8 +166,14 @@ class MeshProjectionModel(object):
     def set_plane_normal(self, normal):
         self._projection_plane_normal = normal
 
+        field_cache = self._normal_field.getFieldmodule().createFieldcache()
+        self._normal_field.assignReal(field_cache, normal)
+
     def get_plane_normal(self):
         return self._projection_plane_normal
+
+    def get_plane_normal_field(self):
+        return self._normal_field
 
     def set_rotation_point(self, point):
         self._projection_plane_point = point
