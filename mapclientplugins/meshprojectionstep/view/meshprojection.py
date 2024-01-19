@@ -15,6 +15,7 @@ from cmlibs.widgets.handlers.sceneselection import SceneSelection
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
 from mapclientplugins.meshprojectionstep.handlers.orientation import Orientation
+from mapclientplugins.meshprojectionstep.handlers.normal import Normal
 
 
 class ZincFieldListModel(QtCore.QAbstractListModel):
@@ -165,6 +166,10 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         orientation_handler = Orientation(QtCore.Qt.Key.Key_R)
         orientation_handler.set_model(self._model)
         self._ui.widgetZinc.register_handler(orientation_handler)
+
+        normal_handler = Normal(QtCore.Qt.Key.Key_T)
+        normal_handler.set_model(self._model)
+        self._ui.widgetZinc.register_handler(normal_handler)
 
     def _project_clicked(self):
         coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()

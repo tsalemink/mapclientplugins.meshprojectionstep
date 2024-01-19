@@ -22,6 +22,17 @@ def rotate_nodes(region, rotation_matrix, rotation_point, coordinate_field_name=
     _transform_node_values(region, coordinate_field_name, _transform_value, _transform_parameter)
 
 
+def translate_nodes(region, delta, coordinate_field_name='coordinates'):
+
+    def _transform_value(value):
+        return add(value, delta)
+
+    def _transform_parameter(value):
+        return value
+
+    _transform_node_values(region, coordinate_field_name, _transform_value, _transform_parameter)
+
+
 def project_nodes(region, plane_point, plane_normal, coordinate_field_name='coordinates'):
     def _project_point(pt):
         v = sub(pt, plane_point)
@@ -124,7 +135,9 @@ def calculate_line_plane_intersection(pt1, pt2, point_on_plane, plane_normal):
 
 
 DEFAULT_GRAPHICS_SPHERE_SIZE = 10.0
+DEFAULT_NORMAL_ARROW_SIZE = 25.0
 PLANE_MANIPULATION_SPHERE_GRAPHIC_NAME = 'plane_rotation_sphere'
+PLANE_MANIPULATION_NORMAL_GRAPHIC_NAME = 'plane_normal_arrow'
 
 
 def create_plane_manipulation_sphere(region):
@@ -150,6 +163,30 @@ def create_plane_manipulation_sphere(region):
     scene.endChange()
 
     return plane_rotation_sphere
+
+
+def create_plane_normal_indicator(region, plane_normal_field):
+    scene = region.getScene()
+
+    scene.beginChange()
+    plane_normal_indicator = scene.createGraphicsPoints()
+    plane_normal_indicator.setName(PLANE_MANIPULATION_NORMAL_GRAPHIC_NAME)
+    plane_normal_indicator.setFieldDomainType(Field.DOMAIN_TYPE_POINT)
+    plane_normal_indicator.setVisibilityFlag(False)
+
+    fm = region.getFieldmodule()
+    zero_field = fm.createFieldConstant([0, 0, 0])
+    plane_normal_indicator.setCoordinateField(zero_field)
+
+    attributes = plane_normal_indicator.getGraphicspointattributes()
+    attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_ARROW_SOLID)
+    attributes.setBaseSize([DEFAULT_NORMAL_ARROW_SIZE, DEFAULT_NORMAL_ARROW_SIZE / 4, DEFAULT_NORMAL_ARROW_SIZE / 4])
+    attributes.setScaleFactors([0, 0, 0])
+    attributes.setOrientationScaleField(plane_normal_field)
+
+    scene.endChange()
+
+    return plane_normal_indicator
 
 
 def set_glyph_position(glyph, position):
