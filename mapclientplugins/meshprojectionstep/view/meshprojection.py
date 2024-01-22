@@ -112,6 +112,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.pushButtonViewAll.clicked.connect(self._view_all_button_clicked)
         self._ui.widgetZinc.graphics_initialized.connect(self._zinc_widget_ready)
         self._ui.widgetZinc.pixel_scale_changed.connect(self._pixel_scale_changed)
+        self._ui.widgetZinc.handler_activated.connect(self._update_label_text)
         self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
         self._ui.checkBoxSurfacesVisibility.stateChanged.connect(self._scene.set_surfaces_visibility)
         self._ui.spinBoxNodeSize.valueChanged.connect(self._scene.set_node_size)
@@ -144,9 +145,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._model.write_projected_mesh(self.get_output_file(), coordinate_field_name)
 
     def _update_label_text(self):
-        handler_label_map = {SceneManipulation: "Mode: View"}
-        handler_label = handler_label_map[type(self._ui.widgetZinc.get_active_handler())]
-        self._scene.update_label_text(handler_label)
+        handler_label_map = {SceneManipulation: "View", SceneSelection: "Selection", Orientation: "Orientation", Normal: "Normal"}
+        handler_label = handler_label_map[type(self._ui.widgetZinc.active_handler())]
+        self._scene.update_label_text("Mode: " + handler_label)
 
     def _zinc_widget_ready(self):
         self._ui.widgetZinc.set_selection_filter(self._model.get_selection_filter())
@@ -164,11 +165,11 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.create_projection_plane()
         self._update_ui()
 
-        orientation_handler = Orientation(QtCore.Qt.Key.Key_R)
+        orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
         orientation_handler.set_model(self._model)
         self._ui.widgetZinc.register_handler(orientation_handler)
 
-        normal_handler = Normal(QtCore.Qt.Key.Key_T)
+        normal_handler = Normal(QtCore.Qt.Key.Key_N)
         normal_handler.set_model(self._model)
         self._ui.widgetZinc.register_handler(normal_handler)
 
