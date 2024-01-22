@@ -14,7 +14,7 @@ from cmlibs.utils.zinc.general import ChangeManager
 def rotate_nodes(region, rotation_matrix, rotation_point, coordinate_field_name='coordinates'):
 
     def _transform_value(value):
-        return add(matrix_vector_mult(rotation_matrix, sub(rotation_point, value)), rotation_point)
+        return add(matrix_vector_mult(rotation_matrix, sub(value, rotation_point)), rotation_point)
 
     def _transform_parameter(value):
         return matrix_vector_mult(rotation_matrix, value)
