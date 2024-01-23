@@ -180,6 +180,7 @@ def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _nod
     derivatives_count = len(node_derivatives)
 
     nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+    node_template = nodes.createNodetemplate()
     node_iter = nodes.createNodeiterator()
 
     coordinates = fm.findFieldByName(coordinate_field_name).castFiniteElement()
@@ -194,11 +195,13 @@ def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _nod
             if result == RESULT_OK:
                 proj_x = _node_values_fcn(x)
                 coordinates.assignReal(fc, proj_x)
+                node_template.defineFieldFromNode(coordinates, node)
                 for d in range(derivatives_count):
-                    result, values = coordinates.getNodeParameters(fc, -1, node_derivatives[d], 1, components_count)
-                    if result == RESULT_OK:
+                    version_count = node_template.getValueNumberOfVersions(coordinates, -1, node_derivatives[d])
+                    for version in range(1, version_count + 1):
+                        result, values = coordinates.getNodeParameters(fc, -1, node_derivatives[d], version, components_count)
                         proj_param = _node_parameters_fcn(values)
-                        coordinates.setNodeParameters(fc, -1, node_derivatives[d], 1, proj_param)
+                        coordinates.setNodeParameters(fc, -1, node_derivatives[d], version, proj_param)
 
             node = node_iter.next()
 
