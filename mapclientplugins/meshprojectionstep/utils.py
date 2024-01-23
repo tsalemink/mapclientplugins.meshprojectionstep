@@ -134,6 +134,39 @@ def calculate_line_plane_intersection(pt1, pt2, point_on_plane, plane_normal):
     return None
 
 
+def point_within_plane_boundaries(point, plane_corners):
+    def barycentric_coordinates(p, a, b, c):
+        v0 = b - a
+        v1 = c - a
+        v2 = p - a
+
+        dot00 = np.dot(v0, v0)
+        dot01 = np.dot(v0, v1)
+        dot02 = np.dot(v0, v2)
+        dot11 = np.dot(v1, v1)
+        dot12 = np.dot(v1, v2)
+
+        inv_denominator = 1 / (dot00 * dot11 - dot01 * dot01)
+        _u = (dot11 * dot02 - dot01 * dot12) * inv_denominator
+        _v = (dot00 * dot12 - dot01 * dot02) * inv_denominator
+
+        return _u, _v
+
+    x, y, z = point
+
+    for i in range(len(plane_corners)):
+        p1 = np.array(plane_corners[i % len(plane_corners)])
+        p2 = np.array(plane_corners[(i + 1) % len(plane_corners)])
+        p3 = np.array(plane_corners[(i + 2) % len(plane_corners)])
+
+        u, v = barycentric_coordinates(np.array([x, y, z]), p1, p2, p3)
+
+        if 0 <= u <= 1 and 0 <= v <= 1 and u + v <= 1:
+            return True
+
+    return False
+
+
 DEFAULT_GRAPHICS_SPHERE_SIZE = 10.0
 DEFAULT_NORMAL_ARROW_SIZE = 25.0
 PLANE_MANIPULATION_SPHERE_GRAPHIC_NAME = 'plane_rotation_sphere'

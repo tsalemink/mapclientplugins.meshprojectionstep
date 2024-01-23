@@ -10,7 +10,7 @@ from cmlibs.widgets.errors import HandlerError
 from cmlibs.maths.vectorops import cross, sub, normalize, axis_angle_to_rotation_matrix
 
 from mapclientplugins.meshprojectionstep.utils import create_plane_manipulation_sphere, get_glyph_position, set_glyph_position, \
-    rotate_nodes, calculate_line_plane_intersection, calculate_normal
+    rotate_nodes, calculate_line_plane_intersection, calculate_normal, mesh_nodes_coordinates, point_within_plane_boundaries
 
 
 class Orientation(KeyActivatedHandler):
@@ -77,8 +77,10 @@ class Orientation(KeyActivatedHandler):
                 point_on_plane = calculate_line_plane_intersection(near_plane_point, far_plane_point, self._model.get_rotation_point(),
                                                                    self._model.get_plane_normal())
                 if point_on_plane is not None:
-                    set_glyph_position(self._glyph, point_on_plane)
-                    self._model.set_rotation_point(point_on_plane)
+                    corners = mesh_nodes_coordinates(self._model.get_projection_plane_region())
+                    if point_within_plane_boundaries(point_on_plane, corners):
+                        set_glyph_position(self._glyph, point_on_plane)
+                        self._model.set_rotation_point(point_on_plane)
 
             else:
                 width = self._scene_viewer.width()
