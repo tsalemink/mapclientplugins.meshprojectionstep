@@ -1,6 +1,7 @@
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.zinc.field import Field
 from cmlibs.zinc.glyph import Glyph
+from cmlibs.zinc.material import Material
 from cmlibs.zinc.graphics import Graphics
 from cmlibs.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_WINDOW_PIXEL_BOTTOM_LEFT
 
@@ -60,6 +61,7 @@ class MeshProjectionScene(object):
         self._group_graphics = []
         self._label_graphics = None
         self._surface_graphics = None
+        self._surface_material = None
         self._node_graphics = None
         self._line_graphics = None
         self._selection_graphics = None
@@ -77,6 +79,7 @@ class MeshProjectionScene(object):
                 mm = scene.getMaterialmodule()
                 yellow = mm.findMaterialByName('yellow')
 
+                self._surface_material = mm.findMaterialByName('white')
                 self._node_graphics = self.create_point_graphics(scene, None, None, None, Field.DOMAIN_TYPE_NODES)
                 self._line_graphics = scene.createGraphicsLines()
                 self._line_graphics.setMaterial(yellow)
@@ -179,6 +182,9 @@ class MeshProjectionScene(object):
         self._data_point_base_size = size
         self._update_graphic_point_size()
 
+    def set_plane_alpha(self, value):
+        self._surface_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, value)
+
     def are_surface_graphics_available(self):
         return self._surface_graphics is not None and self._surface_graphics.isValid()
 
@@ -191,6 +197,7 @@ class MeshProjectionScene(object):
     def create_projection_plane(self):
         region = self._model.get_projection_plane_region()
         self._surface_graphics = _create_surface_graphics(region)
+        self._surface_graphics.setMaterial(self._surface_material)
 
     def visualise_projected_mesh(self, coordinate_field_name):
         region = self._model.get_projected_region()

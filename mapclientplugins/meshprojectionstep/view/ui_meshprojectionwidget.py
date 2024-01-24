@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshprojectionwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.2
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -142,29 +142,49 @@ class Ui_MeshProjectionWidget(object):
 
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
-        self.labelNodeSize = QLabel(self.groupBoxVisibility)
-        self.labelNodeSize.setObjectName(u"labelNodeSize")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.labelNodeSize.sizePolicy().hasHeightForWidth())
-        self.labelNodeSize.setSizePolicy(sizePolicy1)
-
-        self.gridLayout.addWidget(self.labelNodeSize, 0, 0, 1, 1)
-
         self.spinBoxNodeSize = QDoubleSpinBox(self.groupBoxVisibility)
         self.spinBoxNodeSize.setObjectName(u"spinBoxNodeSize")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.spinBoxNodeSize.sizePolicy().hasHeightForWidth())
-        self.spinBoxNodeSize.setSizePolicy(sizePolicy2)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.spinBoxNodeSize.sizePolicy().hasHeightForWidth())
+        self.spinBoxNodeSize.setSizePolicy(sizePolicy1)
         self.spinBoxNodeSize.setSingleStep(0.100000000000000)
 
         self.gridLayout.addWidget(self.spinBoxNodeSize, 0, 1, 1, 1)
 
+        self.labelNodeSize = QLabel(self.groupBoxVisibility)
+        self.labelNodeSize.setObjectName(u"labelNodeSize")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.labelNodeSize.sizePolicy().hasHeightForWidth())
+        self.labelNodeSize.setSizePolicy(sizePolicy2)
+
+        self.gridLayout.addWidget(self.labelNodeSize, 0, 0, 1, 1)
+
 
         self.verticalLayout_6.addLayout(self.gridLayout)
+
+        self.gridLayout_2 = QGridLayout()
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.labelPlaneAlpha = QLabel(self.groupBoxVisibility)
+        self.labelPlaneAlpha.setObjectName(u"labelPlaneAlpha")
+        sizePolicy2.setHeightForWidth(self.labelPlaneAlpha.sizePolicy().hasHeightForWidth())
+        self.labelPlaneAlpha.setSizePolicy(sizePolicy2)
+
+        self.gridLayout_2.addWidget(self.labelPlaneAlpha, 0, 0, 1, 1)
+
+        self.spinBoxPlaneAlpha = QDoubleSpinBox(self.groupBoxVisibility)
+        self.spinBoxPlaneAlpha.setObjectName(u"spinBoxPlaneAlpha")
+        self.spinBoxPlaneAlpha.setMaximum(1.000000000000000)
+        self.spinBoxPlaneAlpha.setSingleStep(0.010000000000000)
+        self.spinBoxPlaneAlpha.setValue(1.000000000000000)
+
+        self.gridLayout_2.addWidget(self.spinBoxPlaneAlpha, 0, 1, 1, 1)
+
+
+        self.verticalLayout_6.addLayout(self.gridLayout_2)
 
 
         self.verticalLayout_2.addWidget(self.groupBoxVisibility)
@@ -245,6 +265,7 @@ class Ui_MeshProjectionWidget(object):
         self.checkBoxSurfacesVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Surfaces", None))
         self.checkBoxMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh", None))
         self.labelNodeSize.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node Size:", None))
+        self.labelPlaneAlpha.setText(QCoreApplication.translate("MeshProjectionWidget", u"Plane Alpha:", None))
         self.groupBoxView.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"View", None))
         self.pushButtonViewAll.setText(QCoreApplication.translate("MeshProjectionWidget", u"View All", None))
         self.groupBoxGeneral.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"General", None))

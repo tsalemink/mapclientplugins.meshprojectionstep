@@ -116,6 +116,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
         self._ui.checkBoxSurfacesVisibility.stateChanged.connect(self._scene.set_surfaces_visibility)
         self._ui.spinBoxNodeSize.valueChanged.connect(self._scene.set_node_size)
+        self._ui.spinBoxPlaneAlpha.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.pushButtonAutoAlignPlane.clicked.connect(self._auto_align_clicked)
         self._ui.pushButtonProject.clicked.connect(self._project_clicked)
 
@@ -197,6 +198,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
             if "node_size" in settings:
                 self._ui.spinBoxNodeSize.setValue(settings["node_size"])
                 self._scene.set_node_size(settings["node_size"])
+            if "alpha" in settings:
+                self._ui.spinBoxPlaneAlpha.setValue(settings["alpha"])
+                self._scene.set_plane_alpha(settings["alpha"])
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -204,6 +208,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
 
         settings = {
             "node_size": self._ui.spinBoxNodeSize.value(),
+            "alpha": self._ui.spinBoxPlaneAlpha.value(),
         }
 
         with open(self._settings_file(), "w") as f:
