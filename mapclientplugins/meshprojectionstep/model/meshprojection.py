@@ -72,7 +72,7 @@ class MeshProjectionModel(object):
     def get_mesh(self):
         return self._mesh
 
-    def write_projected_mesh(self, location):
+    def write_projected_mesh(self, location, coordinate_field_name):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
@@ -85,7 +85,8 @@ class MeshProjectionModel(object):
         def _transform_parameter(value):
             return matrix_vector_mult(rot_mx, value)
 
-        _transform_node_values(self._projected_region, "coordinates", _transform_value, _transform_parameter)
+        _transform_node_values(self._projected_region, coordinate_field_name, _transform_value, _transform_parameter)
+        _transform_datapoint_values(self._projected_region, "marker_data_coordinates", _transform_value)
 
         self._projected_region.writeFile(location)
 
@@ -170,16 +171,25 @@ class MeshProjectionModel(object):
             return sub(vec, mult(self._projection_plane_normal, dist))
 
         _transform_node_values(self._projected_region, coordinate_field_name, _project_point, _project_vector)
+        _transform_datapoint_values(self._projected_region, "marker_data_coordinates", _project_point)
+
+
+def _transform_datapoint_values(region, coordinate_field_name, _node_values_fcn):
+    _transform_domain_values(region, coordinate_field_name, _node_values_fcn, None, Field.DOMAIN_TYPE_DATAPOINTS)
 
 
 def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn):
+    _transform_domain_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn, Field.DOMAIN_TYPE_NODES)
+
+
+def _transform_domain_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn, domain):
     fm = region.getFieldmodule()
     fc = fm.createFieldcache()
     node_derivatives = [Node.VALUE_LABEL_D_DS1, Node.VALUE_LABEL_D_DS2, Node.VALUE_LABEL_D_DS3,
                         Node.VALUE_LABEL_D2_DS1DS2, Node.VALUE_LABEL_D2_DS1DS3, Node.VALUE_LABEL_D2_DS2DS3, Node.VALUE_LABEL_D3_DS1DS2DS3]
     derivatives_count = len(node_derivatives)
 
-    nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+    nodes = fm.findNodesetByFieldDomainType(domain)
     node_template = nodes.createNodetemplate()
     node_iter = nodes.createNodeiterator()
 
@@ -191,7 +201,7 @@ def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _nod
         node = node_iter.next()
         while node.isValid():
             fc.setNode(node)
-            result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
+            result, x = coordinates.evaluateReal(fc, components_count)
             if result == RESULT_OK:
                 proj_x = _node_values_fcn(x)
                 coordinates.assignReal(fc, proj_x)

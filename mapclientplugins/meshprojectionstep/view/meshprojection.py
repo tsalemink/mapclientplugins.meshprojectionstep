@@ -145,7 +145,8 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        self._model.write_projected_mesh(self.get_output_file())
+        coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
+        self._model.write_projected_mesh(self.get_output_file(), coordinate_field_name)
 
     def _update_label_text(self):
         handler_label_map = {SceneManipulation: "Mode: View"}
