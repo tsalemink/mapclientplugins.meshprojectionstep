@@ -130,9 +130,11 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         model.populate(self._coordinate_field_list)
 
         self._ui.comboBoxCoordinateField.setModel(model)
+        self._ui.comboBoxCoordinateField.currentTextChanged.connect(self._update_coordinates_field())
         self._update_coordinates_field()
 
     def _update_coordinates_field(self):
+        self._model.set_mesh_coordinates(self._ui.comboBoxCoordinateField.currentData())
         self._scene.update_mesh_coordinates(self._ui.comboBoxCoordinateField.currentData())
 
     def _settings_file(self):
@@ -156,11 +158,10 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.set_pixel_scale(scale)
 
     def _auto_align_clicked(self):
-        coordinate_field = self._ui.comboBoxCoordinateField.currentData()
-        datapoints = self._model.mesh_nodes_coordinates(coordinate_field)
-        minima, maxima = self._model.evaluate_nodes_minima_and_maxima(coordinate_field)
+        data_points = self._model.mesh_nodes_coordinates()
+        minima, maxima = self._model.evaluate_nodes_minima_and_maxima()
         plane_size = [maxima[0] - minima[0], maxima[1] - minima[1], maxima[2] - minima[2]]
-        point_on_plane, plane_normal = _calculate_best_fit_plane(datapoints)
+        point_on_plane, plane_normal = _calculate_best_fit_plane(data_points)
         self._model.create_projection_plane(point_on_plane, plane_normal, plane_size)
         self._scene.create_projection_plane()
         self._update_ui()

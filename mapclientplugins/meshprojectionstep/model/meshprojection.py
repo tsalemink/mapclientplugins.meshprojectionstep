@@ -1,13 +1,11 @@
 from cmlibs.maths.vectorops import add, sub, matrix_vector_mult
-from cmlibs.utils.zinc.region import copy_nodeset
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
-from cmlibs.zinc.result import RESULT_OK
 
-from mapclientplugins.meshprojectionstep.utils import define_rotation_matrix, project_nodes, _transform_node_values
+from mapclientplugins.meshprojectionstep.utils import define_rotation_matrix, project_nodes, _transform_node_values, get_nodes_coordinates
 
 
 class MeshProjectionModel(object):
@@ -27,7 +25,6 @@ class MeshProjectionModel(object):
 
         self._projection_plane_point = None
         self._projection_plane_normal = None
-        self._normal_field = None
 
         self.define_standard_materials()
         self.define_standard_glyphs()
@@ -51,6 +48,9 @@ class MeshProjectionModel(object):
 
     def get_mesh_coordinates(self):
         return self._mesh_coordinates_field
+
+    def set_mesh_coordinates(self, coordinates):
+        self._mesh_coordinates_field = coordinates
 
     def get_mesh_region(self):
         return self._mesh_region
@@ -111,28 +111,10 @@ class MeshProjectionModel(object):
         material_module = self._context.getMaterialmodule()
         material_module.defineStandardMaterials()
 
-    def mesh_nodes_coordinates(self, coordinates):
-        fm = self._mesh_region.getFieldmodule()
-        fc = fm.createFieldcache()
-
-        nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        node_iter = nodes.createNodeiterator()
-
-        node_coordinates = []
-        node = node_iter.next()
-        while node.isValid():
-            fc.setNode(node)
-            result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
-            if result == RESULT_OK:
-                node_coordinates.append(x)
-            node = node_iter.next()
-
-        return node_coordinates
-
-    def evaluate_nodes_minima_and_maxima(self, field):
+    def evaluate_nodes_minima_and_maxima(self):
         fm = self._mesh_region.getFieldmodule()
         nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        return evaluate_field_nodeset_range(field, nodes)
+        return evaluate_field_nodeset_range(self._mesh_coordinates_field, nodes)
 
     def create_projection_plane(self, point_on_plane, plane_normal, plane_size):
         self._root_region.removeChild(self._projection_plane_region)
@@ -141,11 +123,6 @@ class MeshProjectionModel(object):
 
         self._projection_plane_normal = plane_normal
         self._projection_plane_point = point_on_plane
-
-        field_module = self.get_projection_plane_region().getFieldmodule()
-        field_cache = field_module.createFieldcache()
-        self._normal_field = field_module.createFieldConstant([0, 0, 1])
-        self._normal_field.assignReal(field_cache, plane_normal)
 
         max_dimension = max(plane_size)
         half_max_dimension = max_dimension / 2
@@ -165,20 +142,23 @@ class MeshProjectionModel(object):
     def set_plane_normal(self, normal):
         self._projection_plane_normal = normal
 
-        field_cache = self._normal_field.getFieldmodule().createFieldcache()
-        self._normal_field.assignReal(field_cache, normal)
-
     def get_plane_normal(self):
         return self._projection_plane_normal
-
-    def get_plane_normal_field(self):
-        return self._normal_field
 
     def set_rotation_point(self, point):
         self._projection_plane_point = point
 
     def get_rotation_point(self):
         return self._projection_plane_point
+
+    def mesh_nodes_coordinates(self):
+        return get_nodes_coordinates(self._mesh_region, self._mesh_coordinates_field)
+
+    def plane_nodes_coordinates(self):
+        field_module = self._projection_plane_region.getFieldmodule()
+        coordinate_field_name = self._mesh_coordinates_field.getName()
+        coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
+        return get_nodes_coordinates(self._projection_plane_region, coordinate_field)
 
     def project(self, coordinate_field_name):
         self.reset_projection()
