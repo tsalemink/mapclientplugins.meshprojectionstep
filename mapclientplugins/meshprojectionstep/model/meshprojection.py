@@ -16,6 +16,7 @@ class MeshProjectionModel(object):
 
     def __init__(self):
         self._mesh_coordinates_field = None
+        self._mesh_file_location = None
         self._mesh = None
 
         self._context = Context("MeshProjection")
@@ -45,6 +46,7 @@ class MeshProjectionModel(object):
         fm = self._mesh_region.getFieldmodule()
         with ChangeManager(fm):
             self._mesh_region.readFile(mesh_file_location)
+        self._mesh_file_location = mesh_file_location
 
     def get_context(self):
         return self._context
@@ -182,14 +184,14 @@ class MeshProjectionModel(object):
         return self._projection_plane_point
 
     def project(self, coordinate_field_name):
-        self.reset_projection_node_set()
+        self.reset_projection()
         project_nodes(self._projected_region, self._projection_plane_point, self._projection_plane_normal, coordinate_field_name)
 
-    def reset_projection_node_set(self):
+    def reset_projection(self):
         projection_field_module = self._projected_region.getFieldmodule()
         projection_nodes = projection_field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
         projection_nodes.destroyAllNodes()
 
-        source_field_module = self._mesh_region.getFieldmodule()
-        source_nodes = source_field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        copy_nodeset(self._projected_region, source_nodes)
+        fm = self._projected_region.getFieldmodule()
+        with ChangeManager(fm):
+            self._projected_region.readFile(self._mesh_file_location)
