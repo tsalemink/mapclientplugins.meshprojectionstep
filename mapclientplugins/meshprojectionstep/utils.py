@@ -98,8 +98,7 @@ def define_rotation_matrix(normal1, normal2):
     return axis_angle_to_rotation_matrix(cross(normal2, normal1), theta)
 
 
-def calculate_centroid(region):
-    data_points = mesh_nodes_coordinates(region)
+def calculate_centroid(data_points):
     actual_points = np.array(data_points).transpose()
     centroid = np.mean(actual_points, axis=1, keepdims=True)
     centroid = centroid.flatten()
@@ -107,8 +106,7 @@ def calculate_centroid(region):
     return centroid
 
 
-def calculate_normal(region):
-    data_points = mesh_nodes_coordinates(region)
+def calculate_normal(data_points):
     actual_points = np.array(data_points).transpose()
     centroid = np.mean(actual_points, axis=1, keepdims=True)
     U, S, Vh = np.linalg.svd(actual_points - centroid)
@@ -116,11 +114,20 @@ def calculate_normal(region):
     return centroid.reshape(-1).tolist(), U[:, -1].tolist()
 
 
-def mesh_nodes_coordinates(region):
+def calculate_orthogonal_vectors(points):
+    vectors = [np.array(point) - points[0] for point in points[1:]]
+    lengths = [np.linalg.norm(vector) for vector in vectors]
+    max_index = int(np.argmax(lengths))
+    vectors.pop(max_index)
+    lengths.pop(max_index)
+
+    return (vectors[0] / lengths[0]), (vectors[1] / lengths[1])
+
+
+def get_nodes_coordinates(region, coordinate_field):
     fm = region.getFieldmodule()
     fc = fm.createFieldcache()
 
-    coordinates = fm.findFieldByName("coordinates").castFiniteElement()
     nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
     node_iter = nodes.createNodeiterator()
 
@@ -128,7 +135,7 @@ def mesh_nodes_coordinates(region):
     node = node_iter.next()
     while node.isValid():
         fc.setNode(node)
-        result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
+        result, x = coordinate_field.evaluateReal(fc, coordinate_field.getNumberOfComponents())
         if result == RESULT_OK:
             node_coordinates.append(x)
         node = node_iter.next()
@@ -210,7 +217,7 @@ def create_plane_manipulation_sphere(region):
     return plane_rotation_sphere
 
 
-def create_plane_normal_indicator(region, plane_normal_field):
+def create_plane_normal_indicator(region, plane_normal_field, arrow_size=DEFAULT_NORMAL_ARROW_SIZE):
     scene = region.getScene()
 
     scene.beginChange()
@@ -225,7 +232,7 @@ def create_plane_normal_indicator(region, plane_normal_field):
 
     attributes = plane_normal_indicator.getGraphicspointattributes()
     attributes.setGlyphShapeType(Glyph.SHAPE_TYPE_ARROW_SOLID)
-    attributes.setBaseSize([DEFAULT_NORMAL_ARROW_SIZE, DEFAULT_NORMAL_ARROW_SIZE / 4, DEFAULT_NORMAL_ARROW_SIZE / 4])
+    attributes.setBaseSize([arrow_size, arrow_size / 4, arrow_size / 4])
     attributes.setScaleFactors([0, 0, 0])
     attributes.setOrientationScaleField(plane_normal_field)
 
