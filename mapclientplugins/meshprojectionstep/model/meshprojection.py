@@ -3,7 +3,7 @@ from cmlibs.maths.algorithms import calculate_rotation_matrix
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
-from cmlibs.utils.zinc.node import project_nodes, _transform_node_values, _transform_datapoint_values
+from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
 from cmlibs.zinc.result import RESULT_OK
@@ -78,14 +78,9 @@ class MeshProjectionModel(object):
         xy_normal = [0, 0, 1]
         rot_mx = calculate_rotation_matrix(xy_normal, self._projection_plane_normal)
 
-        def _transform_value(value):
-            return matrix_vector_mult(rot_mx, sub(self._projection_plane_point, value))
-
-        def _transform_parameter(value):
-            return matrix_vector_mult(rot_mx, value)
-
-        _transform_node_values(self._projected_region, coordinate_field_name, _transform_value, _transform_parameter)
-        _transform_datapoint_values(self._projected_region, "marker_data_coordinates", _transform_value)
+        rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, coordinate_field_name)
+        delta = [-component for component in self._projection_plane_point]
+        translate_nodes(self._projected_region, delta, coordinate_field_name)
 
         self._projected_region.writeFile(location)
 
