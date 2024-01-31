@@ -11,11 +11,11 @@ from PySide6 import QtWidgets, QtCore
 
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.sceneselection import SceneSelection
+from cmlibs.widgets.handlers.orientation import Orientation
+from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
-from mapclientplugins.meshprojectionstep.handlers.orientation import Orientation
-from mapclientplugins.meshprojectionstep.handlers.normal import Normal
 
 
 class ZincFieldListModel(QtCore.QAbstractListModel):
@@ -148,8 +148,10 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._model.write_projected_mesh(self.get_output_file(), coordinate_field_name)
 
     def _update_label_text(self):
-        handler_label_map = {SceneManipulation: "View", SceneSelection: "Selection", Orientation: "Orientation", Normal: "Normal"}
-        handler_label = handler_label_map[type(self._ui.widgetZinc.active_handler())]
+        handler_label_map = {"SceneManipulation": "View", "SceneSelection": "Selection", "FixedAxisTranslation": "Translation"}
+        handler_label = self._ui.widgetZinc.active_handler().get_mode()
+        if handler_label in handler_label_map:
+            handler_label = handler_label_map[handler_label]
         self._scene.update_label_text("Mode: " + handler_label)
 
     def _zinc_widget_ready(self):
@@ -171,7 +173,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         orientation_handler.set_model(self._model)
         self._ui.widgetZinc.register_handler(orientation_handler)
 
-        normal_handler = Normal(QtCore.Qt.Key.Key_N)
+        normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
         normal_handler.set_model(self._model)
         self._ui.widgetZinc.register_handler(normal_handler)
 
