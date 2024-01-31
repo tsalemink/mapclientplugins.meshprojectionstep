@@ -1,13 +1,12 @@
 from cmlibs.maths.vectorops import add, sub, matrix_vector_mult
+from cmlibs.maths.algorithms import calculate_rotation_matrix
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.zinc.node import project_nodes, _transform_node_values, _transform_datapoint_values
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
-
-from mapclientplugins.meshprojectionstep.utils import define_rotation_matrix, project_nodes, _transform_node_values, get_nodes_coordinates
-
-from mapclientplugins.meshprojectionstep.utils import _transform_datapoint_values
+from cmlibs.zinc.result import RESULT_OK
 
 
 class MeshProjectionModel(object):
@@ -77,8 +76,7 @@ class MeshProjectionModel(object):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
-        rot_mx = define_rotation_matrix(xy_normal, self._projection_plane_normal)
-        # add(matrix_vector_mult(rot_mx, pt), point_on_plane)
+        rot_mx = calculate_rotation_matrix(xy_normal, self._projection_plane_normal)
 
         def _transform_value(value):
             return matrix_vector_mult(rot_mx, sub(self._projection_plane_point, value))
@@ -134,7 +132,7 @@ class MeshProjectionModel(object):
         element_points = [[n_h_m_d, n_h_m_d, 0], [p_h_m_d, n_h_m_d, 0], [n_h_m_d, p_h_m_d, 0], [p_h_m_d, p_h_m_d, 0]]
         element_normal = [0, 0, 1.0]
 
-        rot_mx = define_rotation_matrix(plane_normal, element_normal)
+        rot_mx = calculate_rotation_matrix(plane_normal, element_normal)
         rot_element_points = [add(matrix_vector_mult(rot_mx, pt), point_on_plane) for pt in element_points]
 
         with ChangeManager(fm):
@@ -175,3 +173,22 @@ class MeshProjectionModel(object):
         fm = self._projected_region.getFieldmodule()
         with ChangeManager(fm):
             self._projected_region.readFile(self._mesh_file_location)
+
+
+def get_nodes_coordinates(region, coordinate_field, domain_type=Field.DOMAIN_TYPE_NODES):
+    fm = region.getFieldmodule()
+    fc = fm.createFieldcache()
+
+    nodes = fm.findNodesetByFieldDomainType(domain_type)
+    node_iter = nodes.createNodeiterator()
+
+    node_coordinates = []
+    node = node_iter.next()
+    while node.isValid():
+        fc.setNode(node)
+        result, x = coordinate_field.evaluateReal(fc, coordinate_field.getNumberOfComponents())
+        if result == RESULT_OK:
+            node_coordinates.append(x)
+        node = node_iter.next()
+
+    return node_coordinates

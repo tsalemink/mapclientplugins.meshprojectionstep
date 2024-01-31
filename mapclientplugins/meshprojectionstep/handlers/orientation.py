@@ -5,12 +5,14 @@ Created: December, 2023
 """
 from math import cos, sin, sqrt, acos, pi
 
+from cmlibs.zinc.field import Field
+from cmlibs.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_WINDOW_PIXEL_TOP_LEFT
 from cmlibs.widgets.handlers.keyactivatedhandler import KeyActivatedHandler
 from cmlibs.widgets.errors import HandlerError
 from cmlibs.maths.vectorops import cross, sub, normalize, axis_angle_to_rotation_matrix
-
-from mapclientplugins.meshprojectionstep.utils import create_plane_manipulation_sphere, get_glyph_position, set_glyph_position, \
-    rotate_nodes, calculate_line_plane_intersection, calculate_normal, point_within_plane_boundaries
+from cmlibs.maths.algorithms import calculate_line_plane_intersection, calculate_plane_normal
+from cmlibs.utils.zinc.scene import create_plane_manipulation_sphere, set_glyph_position
+from cmlibs.utils.zinc.node import rotate_nodes
 
 
 class Orientation(KeyActivatedHandler):
@@ -29,7 +31,8 @@ class Orientation(KeyActivatedHandler):
         if all(hasattr(model, attr) for attr in attributes):
             self._model = model
 
-            self._glyph = create_plane_manipulation_sphere(model.get_projection_plane_region())
+            scene = model.get_projection_plane_region().getScene()
+            self._glyph = create_plane_manipulation_sphere(scene)
             self._initialise_materials()
 
         else:
@@ -48,6 +51,11 @@ class Orientation(KeyActivatedHandler):
         rotation_point = self._model.get_rotation_point()
         set_glyph_position(self._glyph, rotation_point)
 
+        scene = self._zinc_sceneviewer.getScene()
+        region = self._model.get_projection_plane_region()
+        scene_filter = scene.getScenefiltermodule().createScenefilterRegion(region)
+        self._scene_viewer.get_scenepicker().setScenefilter(scene_filter)
+
     def leave(self):
         self._glyph.setVisibilityFlag(False)
 
@@ -65,6 +73,7 @@ class Orientation(KeyActivatedHandler):
     def mouse_move_event(self, event):
         if self._start_position:
             scene = self._zinc_sceneviewer.getScene()
+            scene_picker = self._scene_viewer.get_scenepicker()
             scene.beginChange()
 
             pixel_scale = self._scene_viewer.get_pixel_scale()
@@ -77,8 +86,10 @@ class Orientation(KeyActivatedHandler):
                 point_on_plane = calculate_line_plane_intersection(near_plane_point, far_plane_point, self._model.get_rotation_point(),
                                                                    self._model.get_plane_normal())
                 if point_on_plane is not None:
-                    corners = self._model.plane_nodes_coordinates()
-                    if point_within_plane_boundaries(point_on_plane, corners):
+                    scene_picker.setSceneviewerRectangle(self._zinc_sceneviewer, SCENECOORDINATESYSTEM_WINDOW_PIXEL_TOP_LEFT,
+                                                         x - 1.0, y - 1.0, x + 1.0, y + 1.0)
+                    nearest_element_graphics = scene_picker.getNearestElementGraphics()
+                    if nearest_element_graphics.isValid() and nearest_element_graphics.getFieldDomainType() is Field.DOMAIN_TYPE_MESH2D:
                         set_glyph_position(self._glyph, point_on_plane)
                         self._model.set_rotation_point(point_on_plane)
 
@@ -124,7 +135,7 @@ class Orientation(KeyActivatedHandler):
                     rotation_point = self._model.get_rotation_point()
 
                     rotate_nodes(self._model.get_projection_plane_region(), rotation_matrix, rotation_point)
-                    _, normal = calculate_normal(self._model.plane_nodes_coordinates())
+                    normal = calculate_plane_normal(*self._model.plane_nodes_coordinates()[:3])
 
                     self._model.set_plane_normal(normal)
                     self._start_position = [x, y]

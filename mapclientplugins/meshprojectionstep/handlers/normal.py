@@ -3,12 +3,17 @@ Created: January, 2024
 
 @author: tsalemink
 """
+import numpy as np
+
 from cmlibs.widgets.handlers.keyactivatedhandler import KeyActivatedHandler
 from cmlibs.widgets.errors import HandlerError
 from cmlibs.maths.vectorops import sub, mult, dot
+from cmlibs.maths.algorithms import calculate_centroid
+from cmlibs.utils.zinc.scene import create_plane_normal_indicator, get_glyph_position, set_glyph_position
+from cmlibs.utils.zinc.node import translate_nodes
 
-from mapclientplugins.meshprojectionstep.utils import create_plane_normal_indicator, get_glyph_position, set_glyph_position, \
-    calculate_centroid, calculate_orthogonal_vectors, translate_nodes, DEFAULT_NORMAL_ARROW_SIZE
+
+NORMAL_ARROW_SIZE = 25.0
 
 
 class Normal(KeyActivatedHandler):
@@ -40,15 +45,16 @@ class Normal(KeyActivatedHandler):
 
             region = model.get_projection_plane_region()
             field_module = region.getFieldmodule()
+            scene = region.getScene()
             self._glyph_fields.append(field_module.createFieldConstant([0, 0, 0]))
             self._glyph_fields.append(field_module.createFieldConstant([0, 0, 0]))
             self._glyph_fields.append(field_module.createFieldConstant([0, 0, 0]))
-            self._glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[0]))
-            self._glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[1]))
-            self._glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[2]))
-            self._reverse_glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[0], -DEFAULT_NORMAL_ARROW_SIZE))
-            self._reverse_glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[1], -DEFAULT_NORMAL_ARROW_SIZE))
-            self._reverse_glyphs.append(create_plane_normal_indicator(region, self._glyph_fields[2], -DEFAULT_NORMAL_ARROW_SIZE))
+            self._glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[0], size=NORMAL_ARROW_SIZE))
+            self._glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[1], size=NORMAL_ARROW_SIZE))
+            self._glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[2], size=NORMAL_ARROW_SIZE))
+            self._reverse_glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[0], size=-NORMAL_ARROW_SIZE))
+            self._reverse_glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[1], size=-NORMAL_ARROW_SIZE))
+            self._reverse_glyphs.append(create_plane_normal_indicator(scene, self._glyph_fields[2], size=-NORMAL_ARROW_SIZE))
 
             self._initialise_materials()
 
@@ -138,3 +144,13 @@ class Normal(KeyActivatedHandler):
 
         self._start_position = None
         self._selected_index = None
+
+
+def calculate_orthogonal_vectors(points):
+    vectors = [np.array(point) - points[0] for point in points[1:]]
+    lengths = [np.linalg.norm(vector) for vector in vectors]
+    max_index = int(np.argmax(lengths))
+    vectors.pop(max_index)
+    lengths.pop(max_index)
+
+    return (vectors[0] / lengths[0]), (vectors[1] / lengths[1])
