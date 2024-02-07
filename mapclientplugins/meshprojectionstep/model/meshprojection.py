@@ -1,5 +1,4 @@
-from cmlibs.maths.vectorops import add, sub, matrix_vector_mult
-from cmlibs.maths.algorithms import calculate_rotation_matrix
+from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
@@ -76,7 +75,8 @@ class MeshProjectionModel(object):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
-        rot_mx = calculate_rotation_matrix(xy_normal, self._projection_plane_normal)
+        theta = angle(xy_normal, self._projection_plane_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(self._projection_plane_normal, xy_normal), theta)
 
         rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, coordinate_field_name)
         delta = [-component for component in self._projection_plane_point]
@@ -127,7 +127,8 @@ class MeshProjectionModel(object):
         element_points = [[n_h_m_d, n_h_m_d, 0], [p_h_m_d, n_h_m_d, 0], [n_h_m_d, p_h_m_d, 0], [p_h_m_d, p_h_m_d, 0]]
         element_normal = [0, 0, 1.0]
 
-        rot_mx = calculate_rotation_matrix(plane_normal, element_normal)
+        theta = angle(plane_normal, element_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(element_normal, plane_normal), theta)
         rot_element_points = [add(matrix_vector_mult(rot_mx, pt), point_on_plane) for pt in element_points]
 
         with ChangeManager(fm):
