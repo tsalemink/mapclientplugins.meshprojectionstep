@@ -2,10 +2,9 @@ from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_a
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
-from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes
+from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes, get_field_values
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
-from cmlibs.zinc.result import RESULT_OK
 
 
 class MeshProjectionModel(object):
@@ -71,16 +70,16 @@ class MeshProjectionModel(object):
     def get_mesh(self):
         return self._mesh
 
-    def write_projected_mesh(self, location, coordinate_field_name):
+    def write_projected_mesh(self, location, node_coordinate_field_name, datapoint_coordinate_field_name):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
         theta = angle(xy_normal, self._projection_plane_normal)
         rot_mx = axis_angle_to_rotation_matrix(cross(self._projection_plane_normal, xy_normal), theta)
 
-        rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, coordinate_field_name)
+        rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, node_coordinate_field_name, datapoint_coordinate_field_name)
         delta = [-component for component in self._projection_plane_point]
-        translate_nodes(self._projected_region, delta, coordinate_field_name)
+        translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
 
         self._projected_region.writeFile(location)
 
@@ -149,17 +148,17 @@ class MeshProjectionModel(object):
         return self._projection_plane_point
 
     def mesh_nodes_coordinates(self):
-        return get_nodes_coordinates(self._mesh_region, self._mesh_coordinates_field)
+        return get_field_values(self._mesh_region, self._mesh_coordinates_field)
 
     def plane_nodes_coordinates(self):
         field_module = self._projection_plane_region.getFieldmodule()
         coordinate_field_name = self._mesh_coordinates_field.getName()
         coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
-        return get_nodes_coordinates(self._projection_plane_region, coordinate_field)
+        return get_field_values(self._projection_plane_region, coordinate_field)
 
-    def project(self, coordinate_field_name):
+    def project(self, node_coordinate_field_name, datapoint_coordinate_field_name):
         self.reset_projection()
-        project_nodes(self._projected_region, self._projection_plane_point, self._projection_plane_normal, coordinate_field_name)
+        project_nodes(self._projected_region, self._projection_plane_point, self._projection_plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
 
     def reset_projection(self):
         projection_field_module = self._projected_region.getFieldmodule()
@@ -169,22 +168,3 @@ class MeshProjectionModel(object):
         fm = self._projected_region.getFieldmodule()
         with ChangeManager(fm):
             self._projected_region.readFile(self._mesh_file_location)
-
-
-def get_nodes_coordinates(region, coordinate_field, domain_type=Field.DOMAIN_TYPE_NODES):
-    fm = region.getFieldmodule()
-    fc = fm.createFieldcache()
-
-    nodes = fm.findNodesetByFieldDomainType(domain_type)
-    node_iter = nodes.createNodeiterator()
-
-    node_coordinates = []
-    node = node_iter.next()
-    while node.isValid():
-        fc.setNode(node)
-        result, x = coordinate_field.evaluateReal(fc, coordinate_field.getNumberOfComponents())
-        if result == RESULT_OK:
-            node_coordinates.append(x)
-        node = node_iter.next()
-
-    return node_coordinates

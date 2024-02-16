@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshprojectionwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.5.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -60,23 +60,39 @@ class Ui_MeshProjectionWidget(object):
 
         self.groupBoxGraphics = QGroupBox(MeshProjectionWidget)
         self.groupBoxGraphics.setObjectName(u"groupBoxGraphics")
-        self.verticalLayout_8 = QVBoxLayout(self.groupBoxGraphics)
-        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.verticalLayout_3 = QVBoxLayout(self.groupBoxGraphics)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.gridLayout_3 = QGridLayout()
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.comboBoxCoordinateField = QComboBox(self.groupBoxGraphics)
-        self.comboBoxCoordinateField.setObjectName(u"comboBoxCoordinateField")
+        self.comboBoxNodeCoordinateField = QComboBox(self.groupBoxGraphics)
+        self.comboBoxNodeCoordinateField.setObjectName(u"comboBoxNodeCoordinateField")
 
-        self.gridLayout_3.addWidget(self.comboBoxCoordinateField, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.comboBoxNodeCoordinateField, 0, 1, 1, 1)
 
-        self.labelCoordinateField = QLabel(self.groupBoxGraphics)
-        self.labelCoordinateField.setObjectName(u"labelCoordinateField")
-        self.labelCoordinateField.setMaximumSize(QSize(160, 16777215))
+        self.labelNodeCoordinateField = QLabel(self.groupBoxGraphics)
+        self.labelNodeCoordinateField.setObjectName(u"labelNodeCoordinateField")
+        self.labelNodeCoordinateField.setMaximumSize(QSize(160, 16777215))
 
-        self.gridLayout_3.addWidget(self.labelCoordinateField, 0, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.labelNodeCoordinateField, 0, 0, 1, 1)
 
 
-        self.verticalLayout_8.addLayout(self.gridLayout_3)
+        self.verticalLayout_3.addLayout(self.gridLayout_3)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.labelDatapointCoordinateField = QLabel(self.groupBoxGraphics)
+        self.labelDatapointCoordinateField.setObjectName(u"labelDatapointCoordinateField")
+        self.labelDatapointCoordinateField.setMaximumSize(QSize(160, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.labelDatapointCoordinateField)
+
+        self.comboBoxDatapointCoordinateField = QComboBox(self.groupBoxGraphics)
+        self.comboBoxDatapointCoordinateField.setObjectName(u"comboBoxDatapointCoordinateField")
+
+        self.horizontalLayout_6.addWidget(self.comboBoxDatapointCoordinateField)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_6)
 
 
         self.verticalLayout_2.addWidget(self.groupBoxGraphics)
@@ -257,7 +273,8 @@ class Ui_MeshProjectionWidget(object):
         self.labelMeshProjection.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh Projection - ", None))
         self.labelMeshProjectionIdentifier.setText("")
         self.groupBoxGraphics.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Graphics Coordinates", None))
-        self.labelCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Coordinate Field:", None))
+        self.labelNodeCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node coordinate Field:", None))
+        self.labelDatapointCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Datapoint coordinate Field:", None))
         self.groupBoxProjection.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Projection", None))
         self.pushButtonAutoAlignPlane.setText(QCoreApplication.translate("MeshProjectionWidget", u"Auto Align Plane", None))
         self.pushButtonProject.setText(QCoreApplication.translate("MeshProjectionWidget", u"Project", None))

@@ -129,13 +129,19 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         model = ZincFieldListModel()
         model.populate(self._coordinate_field_list)
 
-        self._ui.comboBoxCoordinateField.setModel(model)
-        self._ui.comboBoxCoordinateField.currentTextChanged.connect(self._update_coordinates_field())
-        self._update_coordinates_field()
+        self._ui.comboBoxNodeCoordinateField.setModel(model)
+        self._ui.comboBoxDatapointCoordinateField.setModel(model)
+        self._ui.comboBoxNodeCoordinateField.currentTextChanged.connect(self._update_node_coordinates_field)
+        self._ui.comboBoxDatapointCoordinateField.currentTextChanged.connect(self._update_datapoint_coordinates_field)
+        self._update_node_coordinates_field()
+        self._update_datapoint_coordinates_field()
 
-    def _update_coordinates_field(self):
-        self._model.set_mesh_coordinates(self._ui.comboBoxCoordinateField.currentData())
-        self._scene.update_mesh_coordinates(self._ui.comboBoxCoordinateField.currentData())
+    def _update_node_coordinates_field(self):
+        self._model.set_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
+        self._scene.update_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
+
+    def _update_datapoint_coordinates_field(self):
+        self._scene.update_datapoint_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -144,8 +150,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
-        self._model.write_projected_mesh(self.get_output_file(), coordinate_field_name)
+        node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
+        datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
+        self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name)
 
     def _update_label_text(self):
         handler_label_map = {"SceneManipulation": "View", "SceneSelection": "Selection", "FixedAxisTranslation": "Translation"}
@@ -178,9 +185,10 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.register_handler(normal_handler)
 
     def _project_clicked(self):
-        coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
-        self._model.project(coordinate_field_name)
-        self._scene.visualise_projected_mesh(coordinate_field_name)
+        node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
+        datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
+        self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
+        self._scene.visualise_projected_mesh(node_coordinate_field_name)
 
     def _view_all_button_clicked(self):
         self._ui.widgetZinc.view_all()

@@ -129,6 +129,9 @@ class MeshProjectionScene(object):
         self._node_graphics.setCoordinateField(coordinate_field)
         self._line_graphics.setCoordinateField(coordinate_field)
 
+    def update_datapoint_coordinates(self, coordinate_field):
+        print('Update marker graphics coordinates.')
+
     def delete_point_graphics(self, row):
         scene = self._model.get_points_region().getScene()
         scene.removeGraphics(self._group_graphics[row])
