@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshprojectionwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.2
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -156,6 +156,25 @@ class Ui_MeshProjectionWidget(object):
 
         self.verticalLayout_6.addWidget(self.checkBoxMeshVisibility)
 
+        self.checkBoxProjectedMeshVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxProjectedMeshVisibility.setObjectName(u"checkBoxProjectedMeshVisibility")
+        self.checkBoxProjectedMeshVisibility.setEnabled(True)
+        self.checkBoxProjectedMeshVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxProjectedMeshVisibility)
+
+        self.checkBoxMarkersVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxMarkersVisibility.setObjectName(u"checkBoxMarkersVisibility")
+        self.checkBoxMarkersVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxMarkersVisibility)
+
+        self.checkBoxProjectedMarkersVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxProjectedMarkersVisibility.setObjectName(u"checkBoxProjectedMarkersVisibility")
+        self.checkBoxProjectedMarkersVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxProjectedMarkersVisibility)
+
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
         self.spinBoxNodeSize = QDoubleSpinBox(self.groupBoxVisibility)
@@ -281,6 +300,9 @@ class Ui_MeshProjectionWidget(object):
         self.groupBoxVisibility.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Visibility", None))
         self.checkBoxSurfacesVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Surfaces", None))
         self.checkBoxMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh", None))
+        self.checkBoxProjectedMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Projected Mesh", None))
+        self.checkBoxMarkersVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Markers", None))
+        self.checkBoxProjectedMarkersVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Projected Markers", None))
         self.labelNodeSize.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node Size:", None))
         self.labelPlaneAlpha.setText(QCoreApplication.translate("MeshProjectionWidget", u"Plane Alpha:", None))
         self.groupBoxView.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"View", None))

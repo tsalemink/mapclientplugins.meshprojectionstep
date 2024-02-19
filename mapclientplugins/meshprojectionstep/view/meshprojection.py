@@ -113,8 +113,11 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.graphics_initialized.connect(self._zinc_widget_ready)
         self._ui.widgetZinc.pixel_scale_changed.connect(self._pixel_scale_changed)
         self._ui.widgetZinc.handler_activated.connect(self._update_label_text)
-        self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
         self._ui.checkBoxSurfacesVisibility.stateChanged.connect(self._scene.set_surfaces_visibility)
+        self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
+        self._ui.checkBoxProjectedMeshVisibility.stateChanged.connect(self._scene.set_projected_mesh_visibility)
+        self._ui.checkBoxMarkersVisibility.stateChanged.connect(self._scene.set_markers_visibility)
+        self._ui.checkBoxProjectedMarkersVisibility.stateChanged.connect(self._scene.set_projected_markers_visibility)
         self._ui.spinBoxNodeSize.valueChanged.connect(self._scene.set_node_size)
         self._ui.spinBoxPlaneAlpha.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.pushButtonAutoAlignPlane.clicked.connect(self._auto_align_clicked)
@@ -188,7 +191,11 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
         datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
         self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
-        self._scene.visualise_projected_mesh(node_coordinate_field_name)
+        self._scene.visualise_projected_graphics(node_coordinate_field_name, datapoint_coordinate_field_name)
+
+        # Use check-box states for visibility.
+        self._scene.set_projected_mesh_visibility(self._ui.checkBoxProjectedMeshVisibility.isChecked())
+        self._scene.set_projected_markers_visibility(self._ui.checkBoxProjectedMarkersVisibility.isChecked())
 
     def _view_all_button_clicked(self):
         self._ui.widgetZinc.view_all()
