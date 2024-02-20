@@ -81,15 +81,15 @@ class MeshProjectionScene(object):
 
             with ChangeManager(scene):
                 mm = scene.getMaterialmodule()
+                silver = mm.findMaterialByName('silver')
                 yellow = mm.findMaterialByName('yellow')
-                orange = mm.findMaterialByName('orange')
 
                 self._surface_material = mm.findMaterialByName('white')
                 self._node_graphics = self.create_point_graphics(scene, None, None, None, Field.DOMAIN_TYPE_NODES)
                 self._mesh_graphics = scene.createGraphicsLines()
                 self._mesh_graphics.setMaterial(yellow)
 
-                self._marker_graphics = self.create_point_graphics(scene, None, None, orange, Field.DOMAIN_TYPE_DATAPOINTS)
+                self._marker_graphics = self.create_point_graphics(scene, None, None, silver, Field.DOMAIN_TYPE_DATAPOINTS)
 
     def add_group_graphic(self, graphic):
         self._group_graphics.append(graphic)
@@ -124,13 +124,6 @@ class MeshProjectionScene(object):
             _set_graphic_point_size(graphic, self._data_point_base_size * self._pixel_scale)
 
         return graphic
-
-    def update_point_cloud_coordinates(self):
-        coordinate_field = self._model.get_point_cloud_coordinates()
-        self._node_graphics.setCoordinateField(coordinate_field)
-        self._selection_graphics.setCoordinateField(coordinate_field)
-        for graphic in self._group_graphics:
-            graphic.setCoordinateField(coordinate_field)
 
     def update_mesh_coordinates(self, coordinate_field):
         self._node_graphics.setCoordinateField(coordinate_field)
@@ -185,11 +178,6 @@ class MeshProjectionScene(object):
     def update_label_text(self, handler_label):
         attributes = self._label_graphics.getGraphicspointattributes()
         attributes.setLabelText(1, handler_label)
-
-    def set_node_graphics_subgroup_field(self, field):
-        if self._node_graphics is not None:
-            if field is not None:
-                self._node_graphics.setSubgroupField(field)
 
     def get_node_size(self):
         return self._data_point_base_size

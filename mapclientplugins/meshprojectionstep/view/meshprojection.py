@@ -8,11 +8,13 @@ import json
 
 import numpy as np
 from PySide6 import QtWidgets, QtCore
+from cmlibs.utils.zinc.finiteelement import is_field_defined_for_nodeset
 
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.sceneselection import SceneSelection
 from cmlibs.widgets.handlers.orientation import Orientation
 from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
+from cmlibs.zinc.field import Field
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
@@ -75,6 +77,8 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.register_handler(SceneManipulation())
         self._ui.widgetZinc.register_handler(SceneSelection(QtCore.Qt.Key.Key_S))
 
+        self._projected_graphics_available = False
+
         self._update_ui()
 
     def set_identifier(self, identifier):
@@ -128,12 +132,26 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.checkBoxSurfacesVisibility.setEnabled(surface_graphics_available)
         self._ui.pushButtonProject.setEnabled(surface_graphics_available)
 
-    def _setup_field_combo_boxes(self):
-        model = ZincFieldListModel()
-        model.populate(self._coordinate_field_list)
+        self._ui.checkBoxProjectedMeshVisibility.setEnabled(self._projected_graphics_available)
+        self._ui.checkBoxProjectedMarkersVisibility.setEnabled(self._projected_graphics_available)
 
-        self._ui.comboBoxNodeCoordinateField.setModel(model)
-        self._ui.comboBoxDatapointCoordinateField.setModel(model)
+    def _setup_field_combo_boxes(self):
+        node_fields = []
+        datapoint_fields = []
+        for field in self._coordinate_field_list:
+            if is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_NODES):
+                node_fields.append(field)
+            elif is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_DATAPOINTS):
+                datapoint_fields.append(field)
+
+        node_model = ZincFieldListModel()
+        node_model.populate(node_fields)
+
+        datapoint_model = ZincFieldListModel()
+        datapoint_model.populate(datapoint_fields)
+
+        self._ui.comboBoxNodeCoordinateField.setModel(node_model)
+        self._ui.comboBoxDatapointCoordinateField.setModel(datapoint_model)
         self._ui.comboBoxNodeCoordinateField.currentTextChanged.connect(self._update_node_coordinates_field)
         self._ui.comboBoxDatapointCoordinateField.currentTextChanged.connect(self._update_datapoint_coordinates_field)
         self._update_node_coordinates_field()
@@ -144,7 +162,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.update_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
 
     def _update_datapoint_coordinates_field(self):
-        self._scene.update_datapoint_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
+        self._scene.update_datapoint_coordinates(self._ui.comboBoxDatapointCoordinateField.currentData())
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -188,6 +206,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.register_handler(normal_handler)
 
     def _project_clicked(self):
+        self._projected_graphics_available = True
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
         datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
         self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
@@ -196,6 +215,8 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         # Use check-box states for visibility.
         self._scene.set_projected_mesh_visibility(self._ui.checkBoxProjectedMeshVisibility.isChecked())
         self._scene.set_projected_markers_visibility(self._ui.checkBoxProjectedMarkersVisibility.isChecked())
+
+        self._update_ui()
 
     def _view_all_button_clicked(self):
         self._ui.widgetZinc.view_all()
