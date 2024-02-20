@@ -1,20 +1,17 @@
-import math
-
-import numpy as np
-from cmlibs.maths.vectorops import dot, magnitude, cross, add, sub, mult, axis_angle_to_rotation_matrix, matrix_vector_mult
+from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes, get_field_values
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
-from cmlibs.zinc.node import Node
-from cmlibs.zinc.result import RESULT_OK
 
 
 class MeshProjectionModel(object):
 
     def __init__(self):
         self._mesh_coordinates_field = None
+        self._mesh_file_location = None
         self._mesh = None
 
         self._context = Context("MeshProjection")
@@ -25,8 +22,8 @@ class MeshProjectionModel(object):
         self._projected_region = self._root_region.createChild("projected")
         self._projection_plane_region = self._root_region.createChild("projection_plane")
 
-        self._projection_plane_normal = None
         self._projection_plane_point = None
+        self._projection_plane_normal = None
 
         self.define_standard_materials()
         self.define_standard_glyphs()
@@ -43,15 +40,16 @@ class MeshProjectionModel(object):
         fm = self._mesh_region.getFieldmodule()
         with ChangeManager(fm):
             self._mesh_region.readFile(mesh_file_location)
-        fm = self._projected_region.getFieldmodule()
-        with ChangeManager(fm):
-            self._projected_region.readFile(mesh_file_location)
+        self._mesh_file_location = mesh_file_location
 
     def get_context(self):
         return self._context
 
     def get_mesh_coordinates(self):
         return self._mesh_coordinates_field
+
+    def set_mesh_coordinates(self, coordinates):
+        self._mesh_coordinates_field = coordinates
 
     def get_mesh_region(self):
         return self._mesh_region
@@ -72,21 +70,16 @@ class MeshProjectionModel(object):
     def get_mesh(self):
         return self._mesh
 
-    def write_projected_mesh(self, location, coordinate_field_name):
+    def write_projected_mesh(self, location, node_coordinate_field_name, datapoint_coordinate_field_name):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
-        rot_mx = _define_rotation_matrix(xy_normal, self._projection_plane_normal)
-        # add(matrix_vector_mult(rot_mx, pt), point_on_plane)
+        theta = angle(xy_normal, self._projection_plane_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(self._projection_plane_normal, xy_normal), theta)
 
-        def _transform_value(value):
-            return matrix_vector_mult(rot_mx, sub(self._projection_plane_point, value))
-
-        def _transform_parameter(value):
-            return matrix_vector_mult(rot_mx, value)
-
-        _transform_node_values(self._projected_region, coordinate_field_name, _transform_value, _transform_parameter)
-        _transform_datapoint_values(self._projected_region, "marker_data_coordinates", _transform_value)
+        rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, node_coordinate_field_name, datapoint_coordinate_field_name)
+        delta = [-component for component in self._projection_plane_point]
+        translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
 
         self._projected_region.writeFile(location)
 
@@ -113,28 +106,10 @@ class MeshProjectionModel(object):
         material_module = self._context.getMaterialmodule()
         material_module.defineStandardMaterials()
 
-    def mesh_nodes_coordinates(self, coordinates):
-        fm = self._mesh_region.getFieldmodule()
-        fc = fm.createFieldcache()
-
-        nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        node_iter = nodes.createNodeiterator()
-
-        node_coordinates = []
-        node = node_iter.next()
-        while node.isValid():
-            fc.setNode(node)
-            result, x = coordinates.evaluateReal(fc, coordinates.getNumberOfComponents())
-            if result == RESULT_OK:
-                node_coordinates.append(x)
-            node = node_iter.next()
-
-        return node_coordinates
-
-    def evaluate_nodes_minima_and_maxima(self, field):
+    def evaluate_nodes_minima_and_maxima(self):
         fm = self._mesh_region.getFieldmodule()
         nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        return evaluate_field_nodeset_range(field, nodes)
+        return evaluate_field_nodeset_range(self._mesh_coordinates_field, nodes)
 
     def create_projection_plane(self, point_on_plane, plane_normal, plane_size):
         self._root_region.removeChild(self._projection_plane_region)
@@ -151,7 +126,8 @@ class MeshProjectionModel(object):
         element_points = [[n_h_m_d, n_h_m_d, 0], [p_h_m_d, n_h_m_d, 0], [n_h_m_d, p_h_m_d, 0], [p_h_m_d, p_h_m_d, 0]]
         element_normal = [0, 0, 1.0]
 
-        rot_mx = _define_rotation_matrix(plane_normal, element_normal)
+        theta = angle(plane_normal, element_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(element_normal, plane_normal), theta)
         rot_element_points = [add(matrix_vector_mult(rot_mx, pt), point_on_plane) for pt in element_points]
 
         with ChangeManager(fm):
@@ -159,67 +135,36 @@ class MeshProjectionModel(object):
             coordinate_field = create_field_coordinates(fm)
             create_square_element(mesh, coordinate_field, rot_element_points)
 
-    def project(self, coordinate_field_name):
+    def set_plane_normal(self, normal):
+        self._projection_plane_normal = normal
 
-        def _project_point(pt):
-            v = sub(pt, self._projection_plane_point)
-            dist = dot(v, self._projection_plane_normal)
-            return sub(pt, mult(self._projection_plane_normal, dist))
+    def get_plane_normal(self):
+        return self._projection_plane_normal
 
-        def _project_vector(vec):
-            dist = dot(vec, self._projection_plane_normal)
-            return sub(vec, mult(self._projection_plane_normal, dist))
+    def set_rotation_point(self, point):
+        self._projection_plane_point = point
 
-        _transform_node_values(self._projected_region, coordinate_field_name, _project_point, _project_vector)
-        _transform_datapoint_values(self._projected_region, "marker_data_coordinates", _project_point)
+    def get_rotation_point(self):
+        return self._projection_plane_point
 
+    def mesh_nodes_coordinates(self):
+        return get_field_values(self._mesh_region, self._mesh_coordinates_field)
 
-def _transform_datapoint_values(region, coordinate_field_name, _node_values_fcn):
-    _transform_domain_values(region, coordinate_field_name, _node_values_fcn, None, Field.DOMAIN_TYPE_DATAPOINTS)
+    def plane_nodes_coordinates(self):
+        field_module = self._projection_plane_region.getFieldmodule()
+        coordinate_field_name = self._mesh_coordinates_field.getName()
+        coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
+        return get_field_values(self._projection_plane_region, coordinate_field)
 
+    def project(self, node_coordinate_field_name, datapoint_coordinate_field_name):
+        self.reset_projection()
+        project_nodes(self._projected_region, self._projection_plane_point, self._projection_plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
 
-def _transform_node_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn):
-    _transform_domain_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn, Field.DOMAIN_TYPE_NODES)
+    def reset_projection(self):
+        projection_field_module = self._projected_region.getFieldmodule()
+        projection_nodes = projection_field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+        projection_nodes.destroyAllNodes()
 
-
-def _transform_domain_values(region, coordinate_field_name, _node_values_fcn, _node_parameters_fcn, domain):
-    fm = region.getFieldmodule()
-    fc = fm.createFieldcache()
-    node_derivatives = [Node.VALUE_LABEL_D_DS1, Node.VALUE_LABEL_D_DS2, Node.VALUE_LABEL_D_DS3,
-                        Node.VALUE_LABEL_D2_DS1DS2, Node.VALUE_LABEL_D2_DS1DS3, Node.VALUE_LABEL_D2_DS2DS3, Node.VALUE_LABEL_D3_DS1DS2DS3]
-    derivatives_count = len(node_derivatives)
-
-    nodes = fm.findNodesetByFieldDomainType(domain)
-    node_template = nodes.createNodetemplate()
-    node_iter = nodes.createNodeiterator()
-
-    coordinates = fm.findFieldByName(coordinate_field_name).castFiniteElement()
-    components_count = coordinates.getNumberOfComponents()
-
-    with ChangeManager(fm):
-
-        node = node_iter.next()
-        while node.isValid():
-            fc.setNode(node)
-            result, x = coordinates.evaluateReal(fc, components_count)
-            if result == RESULT_OK:
-                proj_x = _node_values_fcn(x)
-                coordinates.assignReal(fc, proj_x)
-                node_template.defineFieldFromNode(coordinates, node)
-                for d in range(derivatives_count):
-                    version_count = node_template.getValueNumberOfVersions(coordinates, -1, node_derivatives[d])
-                    for version in range(1, version_count + 1):
-                        result, values = coordinates.getNodeParameters(fc, -1, node_derivatives[d], version, components_count)
-                        proj_param = _node_parameters_fcn(values)
-                        coordinates.setNodeParameters(fc, -1, node_derivatives[d], version, proj_param)
-
-            node = node_iter.next()
-
-
-def _define_rotation_matrix(normal1, normal2):
-    normal_dot_product = dot(normal1, normal2)
-    normal1_length = magnitude(normal1)
-    normal2_length = magnitude(normal2)
-    theta = math.acos(normal_dot_product / (normal1_length * normal2_length))
-
-    return axis_angle_to_rotation_matrix(cross(normal2, normal1), theta)
+        fm = self._projected_region.getFieldmodule()
+        with ChangeManager(fm):
+            self._projected_region.readFile(self._mesh_file_location)

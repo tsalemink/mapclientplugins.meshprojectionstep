@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshprojectionwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.2
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -60,23 +60,39 @@ class Ui_MeshProjectionWidget(object):
 
         self.groupBoxGraphics = QGroupBox(MeshProjectionWidget)
         self.groupBoxGraphics.setObjectName(u"groupBoxGraphics")
-        self.verticalLayout_8 = QVBoxLayout(self.groupBoxGraphics)
-        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.verticalLayout_3 = QVBoxLayout(self.groupBoxGraphics)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.gridLayout_3 = QGridLayout()
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.comboBoxCoordinateField = QComboBox(self.groupBoxGraphics)
-        self.comboBoxCoordinateField.setObjectName(u"comboBoxCoordinateField")
+        self.comboBoxNodeCoordinateField = QComboBox(self.groupBoxGraphics)
+        self.comboBoxNodeCoordinateField.setObjectName(u"comboBoxNodeCoordinateField")
 
-        self.gridLayout_3.addWidget(self.comboBoxCoordinateField, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.comboBoxNodeCoordinateField, 0, 1, 1, 1)
 
-        self.labelCoordinateField = QLabel(self.groupBoxGraphics)
-        self.labelCoordinateField.setObjectName(u"labelCoordinateField")
-        self.labelCoordinateField.setMaximumSize(QSize(160, 16777215))
+        self.labelNodeCoordinateField = QLabel(self.groupBoxGraphics)
+        self.labelNodeCoordinateField.setObjectName(u"labelNodeCoordinateField")
+        self.labelNodeCoordinateField.setMaximumSize(QSize(160, 16777215))
 
-        self.gridLayout_3.addWidget(self.labelCoordinateField, 0, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.labelNodeCoordinateField, 0, 0, 1, 1)
 
 
-        self.verticalLayout_8.addLayout(self.gridLayout_3)
+        self.verticalLayout_3.addLayout(self.gridLayout_3)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.labelDatapointCoordinateField = QLabel(self.groupBoxGraphics)
+        self.labelDatapointCoordinateField.setObjectName(u"labelDatapointCoordinateField")
+        self.labelDatapointCoordinateField.setMaximumSize(QSize(160, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.labelDatapointCoordinateField)
+
+        self.comboBoxDatapointCoordinateField = QComboBox(self.groupBoxGraphics)
+        self.comboBoxDatapointCoordinateField.setObjectName(u"comboBoxDatapointCoordinateField")
+
+        self.horizontalLayout_6.addWidget(self.comboBoxDatapointCoordinateField)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_6)
 
 
         self.verticalLayout_2.addWidget(self.groupBoxGraphics)
@@ -140,31 +156,70 @@ class Ui_MeshProjectionWidget(object):
 
         self.verticalLayout_6.addWidget(self.checkBoxMeshVisibility)
 
+        self.checkBoxProjectedMeshVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxProjectedMeshVisibility.setObjectName(u"checkBoxProjectedMeshVisibility")
+        self.checkBoxProjectedMeshVisibility.setEnabled(True)
+        self.checkBoxProjectedMeshVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxProjectedMeshVisibility)
+
+        self.checkBoxMarkersVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxMarkersVisibility.setObjectName(u"checkBoxMarkersVisibility")
+        self.checkBoxMarkersVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxMarkersVisibility)
+
+        self.checkBoxProjectedMarkersVisibility = QCheckBox(self.groupBoxVisibility)
+        self.checkBoxProjectedMarkersVisibility.setObjectName(u"checkBoxProjectedMarkersVisibility")
+        self.checkBoxProjectedMarkersVisibility.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.checkBoxProjectedMarkersVisibility)
+
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
-        self.labelNodeSize = QLabel(self.groupBoxVisibility)
-        self.labelNodeSize.setObjectName(u"labelNodeSize")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.labelNodeSize.sizePolicy().hasHeightForWidth())
-        self.labelNodeSize.setSizePolicy(sizePolicy1)
-
-        self.gridLayout.addWidget(self.labelNodeSize, 0, 0, 1, 1)
-
         self.spinBoxNodeSize = QDoubleSpinBox(self.groupBoxVisibility)
         self.spinBoxNodeSize.setObjectName(u"spinBoxNodeSize")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.spinBoxNodeSize.sizePolicy().hasHeightForWidth())
-        self.spinBoxNodeSize.setSizePolicy(sizePolicy2)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.spinBoxNodeSize.sizePolicy().hasHeightForWidth())
+        self.spinBoxNodeSize.setSizePolicy(sizePolicy1)
         self.spinBoxNodeSize.setSingleStep(0.100000000000000)
 
         self.gridLayout.addWidget(self.spinBoxNodeSize, 0, 1, 1, 1)
 
+        self.labelNodeSize = QLabel(self.groupBoxVisibility)
+        self.labelNodeSize.setObjectName(u"labelNodeSize")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.labelNodeSize.sizePolicy().hasHeightForWidth())
+        self.labelNodeSize.setSizePolicy(sizePolicy2)
+
+        self.gridLayout.addWidget(self.labelNodeSize, 0, 0, 1, 1)
+
 
         self.verticalLayout_6.addLayout(self.gridLayout)
+
+        self.gridLayout_2 = QGridLayout()
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.labelPlaneAlpha = QLabel(self.groupBoxVisibility)
+        self.labelPlaneAlpha.setObjectName(u"labelPlaneAlpha")
+        sizePolicy2.setHeightForWidth(self.labelPlaneAlpha.sizePolicy().hasHeightForWidth())
+        self.labelPlaneAlpha.setSizePolicy(sizePolicy2)
+
+        self.gridLayout_2.addWidget(self.labelPlaneAlpha, 0, 0, 1, 1)
+
+        self.spinBoxPlaneAlpha = QDoubleSpinBox(self.groupBoxVisibility)
+        self.spinBoxPlaneAlpha.setObjectName(u"spinBoxPlaneAlpha")
+        self.spinBoxPlaneAlpha.setMaximum(1.000000000000000)
+        self.spinBoxPlaneAlpha.setSingleStep(0.010000000000000)
+        self.spinBoxPlaneAlpha.setValue(1.000000000000000)
+
+        self.gridLayout_2.addWidget(self.spinBoxPlaneAlpha, 0, 1, 1, 1)
+
+
+        self.verticalLayout_6.addLayout(self.gridLayout_2)
 
 
         self.verticalLayout_2.addWidget(self.groupBoxVisibility)
@@ -237,14 +292,19 @@ class Ui_MeshProjectionWidget(object):
         self.labelMeshProjection.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh Projection - ", None))
         self.labelMeshProjectionIdentifier.setText("")
         self.groupBoxGraphics.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Graphics Coordinates", None))
-        self.labelCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Coordinate Field:", None))
+        self.labelNodeCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node coordinate Field:", None))
+        self.labelDatapointCoordinateField.setText(QCoreApplication.translate("MeshProjectionWidget", u"Datapoint coordinate Field:", None))
         self.groupBoxProjection.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Projection", None))
         self.pushButtonAutoAlignPlane.setText(QCoreApplication.translate("MeshProjectionWidget", u"Auto Align Plane", None))
         self.pushButtonProject.setText(QCoreApplication.translate("MeshProjectionWidget", u"Project", None))
         self.groupBoxVisibility.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Visibility", None))
         self.checkBoxSurfacesVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Surfaces", None))
         self.checkBoxMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh", None))
+        self.checkBoxProjectedMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Projected Mesh", None))
+        self.checkBoxMarkersVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Markers", None))
+        self.checkBoxProjectedMarkersVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Projected Markers", None))
         self.labelNodeSize.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node Size:", None))
+        self.labelPlaneAlpha.setText(QCoreApplication.translate("MeshProjectionWidget", u"Plane Alpha:", None))
         self.groupBoxView.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"View", None))
         self.pushButtonViewAll.setText(QCoreApplication.translate("MeshProjectionWidget", u"View All", None))
         self.groupBoxGeneral.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"General", None))

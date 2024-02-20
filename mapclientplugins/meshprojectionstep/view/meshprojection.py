@@ -3,21 +3,18 @@ Created: April, 2023
 
 @author: tsalemink
 """
-import colorsys
 import os
 import json
 
 import numpy as np
 from PySide6 import QtWidgets, QtCore
-from cmlibs.utils.zinc.finiteelement import get_identifiers
+from cmlibs.utils.zinc.finiteelement import is_field_defined_for_nodeset
 
-from cmlibs.utils.zinc.general import ChangeManager
-from cmlibs.utils.zinc.region import copy_nodeset
-from cmlibs.utils.zinc.scene import scene_get_or_create_selection_group
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
+from cmlibs.widgets.handlers.sceneselection import SceneSelection
+from cmlibs.widgets.handlers.orientation import Orientation
+from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
 from cmlibs.zinc.field import Field
-from cmlibs.zinc.field import FieldFindMeshLocation
-from cmlibs.zinc.material import Material
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
@@ -78,9 +75,11 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.set_grab_focus(True)
         self._ui.widgetZinc.set_context(model.get_context())
         self._ui.widgetZinc.register_handler(SceneManipulation())
+        self._ui.widgetZinc.register_handler(SceneSelection(QtCore.Qt.Key.Key_S))
+
+        self._projected_graphics_available = False
 
         self._update_ui()
-        # self._ui.widgetZinc.register_handler(self._selection_handler)
 
     def set_identifier(self, identifier):
         self._ui.labelMeshProjectionIdentifier.setText(identifier)
@@ -117,9 +116,14 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.pushButtonViewAll.clicked.connect(self._view_all_button_clicked)
         self._ui.widgetZinc.graphics_initialized.connect(self._zinc_widget_ready)
         self._ui.widgetZinc.pixel_scale_changed.connect(self._pixel_scale_changed)
-        self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
+        self._ui.widgetZinc.handler_activated.connect(self._update_label_text)
         self._ui.checkBoxSurfacesVisibility.stateChanged.connect(self._scene.set_surfaces_visibility)
+        self._ui.checkBoxMeshVisibility.stateChanged.connect(self._scene.set_mesh_visibility)
+        self._ui.checkBoxProjectedMeshVisibility.stateChanged.connect(self._scene.set_projected_mesh_visibility)
+        self._ui.checkBoxMarkersVisibility.stateChanged.connect(self._scene.set_markers_visibility)
+        self._ui.checkBoxProjectedMarkersVisibility.stateChanged.connect(self._scene.set_projected_markers_visibility)
         self._ui.spinBoxNodeSize.valueChanged.connect(self._scene.set_node_size)
+        self._ui.spinBoxPlaneAlpha.valueChanged.connect(self._scene.set_plane_alpha)
         self._ui.pushButtonAutoAlignPlane.clicked.connect(self._auto_align_clicked)
         self._ui.pushButtonProject.clicked.connect(self._project_clicked)
 
@@ -128,15 +132,37 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.checkBoxSurfacesVisibility.setEnabled(surface_graphics_available)
         self._ui.pushButtonProject.setEnabled(surface_graphics_available)
 
+        self._ui.checkBoxProjectedMeshVisibility.setEnabled(self._projected_graphics_available)
+        self._ui.checkBoxProjectedMarkersVisibility.setEnabled(self._projected_graphics_available)
+
     def _setup_field_combo_boxes(self):
-        model = ZincFieldListModel()
-        model.populate(self._coordinate_field_list)
+        node_fields = []
+        datapoint_fields = []
+        for field in self._coordinate_field_list:
+            if is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_NODES):
+                node_fields.append(field)
+            if is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_DATAPOINTS):
+                datapoint_fields.append(field)
 
-        self._ui.comboBoxCoordinateField.setModel(model)
-        self._update_coordinates_field()
+        node_model = ZincFieldListModel()
+        node_model.populate(node_fields)
 
-    def _update_coordinates_field(self):
-        self._scene.update_mesh_coordinates(self._ui.comboBoxCoordinateField.currentData())
+        datapoint_model = ZincFieldListModel()
+        datapoint_model.populate(datapoint_fields)
+
+        self._ui.comboBoxNodeCoordinateField.setModel(node_model)
+        self._ui.comboBoxDatapointCoordinateField.setModel(datapoint_model)
+        self._ui.comboBoxNodeCoordinateField.currentTextChanged.connect(self._update_node_coordinates_field)
+        self._ui.comboBoxDatapointCoordinateField.currentTextChanged.connect(self._update_datapoint_coordinates_field)
+        self._update_node_coordinates_field()
+        self._update_datapoint_coordinates_field()
+
+    def _update_node_coordinates_field(self):
+        self._model.set_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
+        self._scene.update_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
+
+    def _update_datapoint_coordinates_field(self):
+        self._scene.update_datapoint_coordinates(self._ui.comboBoxDatapointCoordinateField.currentData())
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -145,13 +171,16 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
-        self._model.write_projected_mesh(self.get_output_file(), coordinate_field_name)
+        node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
+        datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
+        self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name)
 
     def _update_label_text(self):
-        handler_label_map = {SceneManipulation: "Mode: View"}
-        handler_label = handler_label_map[type(self._ui.widgetZinc.get_active_handler())]
-        self._scene.update_label_text(handler_label)
+        handler_label_map = {"SceneManipulation": "View", "SceneSelection": "Selection", "FixedAxisTranslation": "Translation"}
+        handler_label = self._ui.widgetZinc.active_handler().get_mode()
+        if handler_label in handler_label_map:
+            handler_label = handler_label_map[handler_label]
+        self._scene.update_label_text("Mode: " + handler_label)
 
     def _zinc_widget_ready(self):
         self._ui.widgetZinc.set_selection_filter(self._model.get_selection_filter())
@@ -160,19 +189,34 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.set_pixel_scale(scale)
 
     def _auto_align_clicked(self):
-        coordinate_field = self._ui.comboBoxCoordinateField.currentData()
-        datapoints = self._model.mesh_nodes_coordinates(coordinate_field)
-        minima, maxima = self._model.evaluate_nodes_minima_and_maxima(coordinate_field)
+        data_points = self._model.mesh_nodes_coordinates()
+        minima, maxima = self._model.evaluate_nodes_minima_and_maxima()
         plane_size = [maxima[0] - minima[0], maxima[1] - minima[1], maxima[2] - minima[2]]
-        point_on_plane, plane_normal = _calculate_best_fit_plane(datapoints)
+        point_on_plane, plane_normal = _calculate_best_fit_plane(data_points)
         self._model.create_projection_plane(point_on_plane, plane_normal, plane_size)
         self._scene.create_projection_plane()
         self._update_ui()
 
+        orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
+        orientation_handler.set_model(self._model)
+        self._ui.widgetZinc.register_handler(orientation_handler)
+
+        normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
+        normal_handler.set_model(self._model)
+        self._ui.widgetZinc.register_handler(normal_handler)
+
     def _project_clicked(self):
-        coordinate_field_name = self._ui.comboBoxCoordinateField.currentData().getName()
-        self._model.project(coordinate_field_name)
-        self._scene.visualise_projected_mesh(coordinate_field_name)
+        self._projected_graphics_available = True
+        node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
+        datapoint_coordinate_field_name = self._ui.comboBoxDatapointCoordinateField.currentData().getName()
+        self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
+        self._scene.visualise_projected_graphics(node_coordinate_field_name, datapoint_coordinate_field_name)
+
+        # Use check-box states for visibility.
+        self._scene.set_projected_mesh_visibility(self._ui.checkBoxProjectedMeshVisibility.isChecked())
+        self._scene.set_projected_markers_visibility(self._ui.checkBoxProjectedMarkersVisibility.isChecked())
+
+        self._update_ui()
 
     def _view_all_button_clicked(self):
         self._ui.widgetZinc.view_all()
@@ -194,6 +238,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
             if "node_size" in settings:
                 self._ui.spinBoxNodeSize.setValue(settings["node_size"])
                 self._scene.set_node_size(settings["node_size"])
+            if "alpha" in settings:
+                self._ui.spinBoxPlaneAlpha.setValue(settings["alpha"])
+                self._scene.set_plane_alpha(settings["alpha"])
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -201,6 +248,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
 
         settings = {
             "node_size": self._ui.spinBoxNodeSize.value(),
+            "alpha": self._ui.spinBoxPlaneAlpha.value(),
         }
 
         with open(self._settings_file(), "w") as f:
@@ -214,4 +262,3 @@ def _calculate_best_fit_plane(points):
     U, S, Vh = np.linalg.svd(actual_points - centroid)
 
     return centroid.reshape(-1).tolist(), U[:, -1].tolist()
-
