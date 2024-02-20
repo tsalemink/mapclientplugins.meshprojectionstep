@@ -141,7 +141,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         for field in self._coordinate_field_list:
             if is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_NODES):
                 node_fields.append(field)
-            elif is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_DATAPOINTS):
+            if is_field_defined_for_nodeset(field, nodeset_domain=Field.DOMAIN_TYPE_DATAPOINTS):
                 datapoint_fields.append(field)
 
         node_model = ZincFieldListModel()
