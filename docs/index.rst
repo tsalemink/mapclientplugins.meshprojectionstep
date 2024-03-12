@@ -119,6 +119,10 @@ There are two arrows for each Cartesian axis and these arrows can be dragged to 
 
 The user will need to press the `Project` button again after making any adjustments to the plane orientation or position.
 
+For more information on the `Orientation` and `FixedAxisTranslation` handlers, please refer to the
+`CMLibs Widgets documentation <https://abi-mapping-tools.readthedocs.io/en/stable/cmlibs.widgets/docs/index.html>`_
+for these classes - found under `Handlers`.
+
 Finishing
 ^^^^^^^^^
 
