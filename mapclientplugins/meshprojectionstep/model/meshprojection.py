@@ -79,9 +79,13 @@ class MeshProjectionModel(object):
         rot_mx = axis_angle_to_rotation_matrix(cross(plane_normal, xy_normal), theta)
 
         rotation_point = self._plane.getRotationPoint()
-        rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name, datapoint_coordinate_field_name)
         delta = [-component for component in rotation_point]
-        translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
+        if datapoint_coordinate_field_name:
+            rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name, datapoint_coordinate_field_name)
+            translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
+        else:
+            rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name)
+            translate_nodes(self._projected_region, delta, node_coordinate_field_name)
 
         self._projected_region.writeFile(location)
 
@@ -154,7 +158,10 @@ class MeshProjectionModel(object):
         self.reset_projection()
         point_on_plane = self._plane.getRotationPoint()
         plane_normal = self._plane.getNormal()
-        project_nodes(self._projected_region, point_on_plane, plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
+        if datapoint_coordinate_field_name:
+            project_nodes(self._projected_region, point_on_plane, plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
+        else:
+            project_nodes(self._projected_region, point_on_plane, plane_normal, node_coordinate_field_name)
 
     def reset_projection(self):
         projection_field_module = self._projected_region.getFieldmodule()

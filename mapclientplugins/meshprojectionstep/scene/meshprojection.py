@@ -220,7 +220,6 @@ class MeshProjectionScene(object):
         region = self._model.get_projected_region()
         fm = region.getFieldmodule()
         mesh_coordinates = fm.findFieldByName(mesh_coordinate_field_name)
-        marker_coordinates = fm.findFieldByName(marker_coordinate_field_name)
         scene = region.getScene()
         mm = scene.getMaterialmodule()
         green = mm.findMaterialByName('green')
@@ -234,5 +233,7 @@ class MeshProjectionScene(object):
             self._projected_mesh_graphics.setCoordinateField(mesh_coordinates)
             self._projected_mesh_graphics.setMaterial(blue)
 
-            self._projected_marker_graphics = self.create_point_graphics(scene, marker_coordinates, None, magenta,
-                                                                         Field.DOMAIN_TYPE_DATAPOINTS)
+            if marker_coordinate_field_name:
+                marker_coordinates = fm.findFieldByName(marker_coordinate_field_name)
+                self._projected_marker_graphics = self.create_point_graphics(scene, marker_coordinates, None, magenta,
+                                                                             Field.DOMAIN_TYPE_DATAPOINTS)
