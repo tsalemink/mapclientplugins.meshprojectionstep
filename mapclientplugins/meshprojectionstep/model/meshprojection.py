@@ -3,6 +3,7 @@ from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes, get_field_values
+from cmlibs.utils.geometry.plane import ZincPlane
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
 
@@ -22,8 +23,7 @@ class MeshProjectionModel(object):
         self._projected_region = self._root_region.createChild("projected")
         self._projection_plane_region = self._root_region.createChild("projection_plane")
 
-        self._projection_plane_point = None
-        self._projection_plane_normal = None
+        self._plane = None
 
         self.define_standard_materials()
         self.define_standard_glyphs()
@@ -60,7 +60,7 @@ class MeshProjectionModel(object):
     def get_projected_region(self):
         return self._projected_region
 
-    def get_projection_plane_region(self):
+    def get_plane_region(self):
         return self._projection_plane_region
 
     def remove_label_region(self):
@@ -74,11 +74,13 @@ class MeshProjectionModel(object):
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
-        theta = angle(xy_normal, self._projection_plane_normal)
-        rot_mx = axis_angle_to_rotation_matrix(cross(self._projection_plane_normal, xy_normal), theta)
+        plane_normal = self._plane.getNormal()
+        theta = angle(xy_normal, plane_normal)
+        rot_mx = axis_angle_to_rotation_matrix(cross(plane_normal, xy_normal), theta)
 
-        rotate_nodes(self._projected_region, rot_mx, self._projection_plane_point, node_coordinate_field_name, datapoint_coordinate_field_name)
-        delta = [-component for component in self._projection_plane_point]
+        rotation_point = self._plane.getRotationPoint()
+        rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name, datapoint_coordinate_field_name)
+        delta = [-component for component in rotation_point]
         translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
 
         self._projected_region.writeFile(location)
@@ -116,8 +118,9 @@ class MeshProjectionModel(object):
         self._projection_plane_region = self._root_region.createChild("projection_plane")
         fm = self._projection_plane_region.getFieldmodule()
 
-        self._projection_plane_normal = plane_normal
-        self._projection_plane_point = point_on_plane
+        field_module = self._mesh_region.getFieldmodule()
+        self._plane = ZincPlane(field_module)
+        self._plane.setPlaneEquation(plane_normal, point_on_plane)
 
         max_dimension = max(plane_size)
         half_max_dimension = max_dimension / 2
@@ -135,17 +138,8 @@ class MeshProjectionModel(object):
             coordinate_field = create_field_coordinates(fm)
             create_square_element(mesh, coordinate_field, rot_element_points)
 
-    def set_plane_normal(self, normal):
-        self._projection_plane_normal = normal
-
-    def get_plane_normal(self):
-        return self._projection_plane_normal
-
-    def set_rotation_point(self, point):
-        self._projection_plane_point = point
-
-    def get_rotation_point(self):
-        return self._projection_plane_point
+    def get_plane(self):
+        return self._plane
 
     def mesh_nodes_coordinates(self):
         return get_field_values(self._mesh_region, self._mesh_coordinates_field)
@@ -158,7 +152,9 @@ class MeshProjectionModel(object):
 
     def project(self, node_coordinate_field_name, datapoint_coordinate_field_name):
         self.reset_projection()
-        project_nodes(self._projected_region, self._projection_plane_point, self._projection_plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
+        point_on_plane = self._plane.getRotationPoint()
+        plane_normal = self._plane.getNormal()
+        project_nodes(self._projected_region, point_on_plane, plane_normal, node_coordinate_field_name, datapoint_coordinate_field_name)
 
     def reset_projection(self):
         projection_field_module = self._projected_region.getFieldmodule()

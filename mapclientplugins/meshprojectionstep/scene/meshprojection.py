@@ -212,7 +212,7 @@ class MeshProjectionScene(object):
             self._projected_marker_graphics.setVisibilityFlag(state != 0)
 
     def create_projection_plane(self):
-        region = self._model.get_projection_plane_region()
+        region = self._model.get_plane_region()
         self._surface_graphics = _create_surface_graphics(region)
         self._surface_graphics.setMaterial(self._surface_material)
 
