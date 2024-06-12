@@ -162,9 +162,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.update_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
 
     def _update_datapoint_coordinates_field(self):
-        datapoint_coordinates = self._ui.comboBoxDatapointCoordinateField.currentData()
-        if datapoint_coordinates:
-            self._scene.update_datapoint_coordinates(datapoint_coordinates)
+        datapoint_coordinates_field = self._ui.comboBoxDatapointCoordinateField.currentData()
+        if datapoint_coordinates_field:
+            self._scene.update_datapoint_coordinates(datapoint_coordinates_field)
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -174,9 +174,14 @@ class MeshProjectionWidget(QtWidgets.QWidget):
             os.makedirs(self._location)
 
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
-        datapoint_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_field.getName() if datapoint_field else None
+        datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
+        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
         self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name)
+        self._reset_projection()
+
+    def _reset_projection(self):
+        self._projected_graphics_available = False
+        self._model.reset_projection_region()
 
     def _update_label_text(self):
         handler_label_map = {"SceneManipulation": "View", "SceneSelection": "Selection", "FixedAxisTranslation": "Translation"}
@@ -211,8 +216,8 @@ class MeshProjectionWidget(QtWidgets.QWidget):
     def _project_clicked(self):
         self._projected_graphics_available = True
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
-        datapoint_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_field.getName() if datapoint_field else None
+        datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
+        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
         self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
         self._scene.visualise_projected_graphics(node_coordinate_field_name, datapoint_coordinate_field_name)
 
@@ -232,7 +237,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._callback()
 
     def _remove_ui_region(self):
-        self._model.remove_label_region()
+        self._model.reset_label_region()
 
     def _load_settings(self):
         if os.path.isfile(self._settings_file()):
