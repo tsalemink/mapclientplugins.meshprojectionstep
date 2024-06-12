@@ -63,7 +63,7 @@ class MeshProjectionModel(object):
     def get_projection_plane_region(self):
         return self._projection_plane_region
 
-    def remove_label_region(self):
+    def reset_label_region(self):
         root_region = self._context.getDefaultRegion()
         root_region.removeChild(self._label_region)
 
@@ -71,7 +71,6 @@ class MeshProjectionModel(object):
         return self._mesh
 
     def write_projected_mesh(self, location, node_coordinate_field_name, datapoint_coordinate_field_name):
-
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
         theta = angle(xy_normal, self._projection_plane_normal)
@@ -168,3 +167,7 @@ class MeshProjectionModel(object):
         fm = self._projected_region.getFieldmodule()
         with ChangeManager(fm):
             self._projected_region.readFile(self._mesh_file_location)
+
+    def reset_projection_region(self):
+        self._root_region.removeChild(self._projected_region)
+        self._projected_region = self._root_region.createChild("projected")
