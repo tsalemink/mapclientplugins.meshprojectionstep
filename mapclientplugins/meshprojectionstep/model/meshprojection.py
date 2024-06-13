@@ -60,8 +60,35 @@ class MeshProjectionModel(object):
     def get_projected_region(self):
         return self._projected_region
 
-    def get_plane_region(self):
+    def get_projection_plane_region(self):
         return self._projection_plane_region
+
+    def get_plane(self):
+        """
+        API to satisfy the model API requirements for the orientation handler.
+
+        :return: ZincPlane.
+        """
+        return self._plane
+
+    def get_plane_region(self):
+        """
+        API to satisfy the model API requirements for the orientation handler.
+
+        :return: The Zinc region the plane is described in.
+        """
+        return self._projection_plane_region
+
+    def plane_nodes_coordinates(self):
+        """
+        API to satisfy the model API requirements for the orientation handler.
+
+        :return: Node coordinate values.
+        """
+        field_module = self._projection_plane_region.getFieldmodule()
+        coordinate_field_name = self._mesh_coordinates_field.getName()
+        coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
+        return get_field_values(self._projection_plane_region, coordinate_field)
 
     def reset_label_region(self):
         root_region = self._context.getDefaultRegion()
@@ -141,17 +168,8 @@ class MeshProjectionModel(object):
             coordinate_field = create_field_coordinates(fm)
             create_square_element(mesh, coordinate_field, rot_element_points)
 
-    def get_plane(self):
-        return self._plane
-
     def mesh_nodes_coordinates(self):
         return get_field_values(self._mesh_region, self._mesh_coordinates_field)
-
-    def plane_nodes_coordinates(self):
-        field_module = self._projection_plane_region.getFieldmodule()
-        coordinate_field_name = self._mesh_coordinates_field.getName()
-        coordinate_field = field_module.findFieldByName(coordinate_field_name).castFiniteElement()
-        return get_field_values(self._projection_plane_region, coordinate_field)
 
     def project(self, node_coordinate_field_name, datapoint_coordinate_field_name):
         self.reset_projection()
