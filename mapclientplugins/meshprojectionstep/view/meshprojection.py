@@ -162,8 +162,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._scene.update_mesh_coordinates(self._ui.comboBoxNodeCoordinateField.currentData())
 
     def _update_datapoint_coordinates_field(self):
-        if self._ui.comboBoxDatapointCoordinateField.currentData():
-            self._scene.update_datapoint_coordinates(self._ui.comboBoxDatapointCoordinateField.currentData())
+        datapoint_coordinates_field = self._ui.comboBoxDatapointCoordinateField.currentData()
+        if datapoint_coordinates_field:
+            self._scene.update_datapoint_coordinates(datapoint_coordinates_field)
 
     def _settings_file(self):
         return os.path.join(self._location, 'settings.json')
@@ -174,7 +175,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
 
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
         datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else ""
+        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
         self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name)
         self._reset_projection()
 
@@ -216,7 +217,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._projected_graphics_available = True
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
         datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else ""
+        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
         self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
         self._scene.visualise_projected_graphics(node_coordinate_field_name, datapoint_coordinate_field_name)
 
