@@ -8,6 +8,7 @@ import json
 
 import numpy as np
 from PySide6 import QtWidgets, QtCore
+from cmlibs.maths.vectorops import magnitude
 from cmlibs.utils.zinc.finiteelement import is_field_defined_for_nodeset
 
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
@@ -66,6 +67,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._model = model
         self._location = None
         self._callback = None
+        self._plane_handlers_registered = False
         self._coordinate_field_list = []
 
         self._scene = MeshProjectionScene(model)
@@ -135,6 +137,17 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.checkBoxProjectedMeshVisibility.setEnabled(self._projected_graphics_available)
         self._ui.checkBoxProjectedMarkersVisibility.setEnabled(self._projected_graphics_available)
 
+    def _register_plane_handlers(self):
+        if not self._plane_handlers_registered:
+            self._plane_handlers_registered = True
+            orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
+            orientation_handler.set_model(self._model)
+            self._ui.widgetZinc.register_handler(orientation_handler)
+
+            normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
+            normal_handler.set_model(self._model)
+            self._ui.widgetZinc.register_handler(normal_handler)
+
     def _setup_field_combo_boxes(self):
         node_fields = []
         datapoint_fields = []
@@ -196,22 +209,21 @@ class MeshProjectionWidget(QtWidgets.QWidget):
     def _pixel_scale_changed(self, scale):
         self._scene.set_pixel_scale(scale)
 
+    def _calculate_plane_size(self):
+        minima, maxima = self._model.evaluate_nodes_minima_and_maxima()
+        return magnitude([maxima[0] - minima[0], maxima[1] - minima[1], maxima[2] - minima[2]])
+
     def _auto_align_clicked(self):
         data_points = self._model.mesh_nodes_coordinates()
-        minima, maxima = self._model.evaluate_nodes_minima_and_maxima()
-        plane_size = [maxima[0] - minima[0], maxima[1] - minima[1], maxima[2] - minima[2]]
         point_on_plane, plane_normal = _calculate_best_fit_plane(data_points)
+        plane_size = self._calculate_plane_size()
+        self._create_projection_plane(point_on_plane, plane_normal, plane_size)
+
+    def _create_projection_plane(self, point_on_plane, plane_normal, plane_size):
         self._model.create_projection_plane(point_on_plane, plane_normal, plane_size)
         self._scene.create_projection_plane()
+        self._register_plane_handlers()
         self._update_ui()
-
-        orientation_handler = Orientation(QtCore.Qt.Key.Key_O)
-        orientation_handler.set_model(self._model)
-        self._ui.widgetZinc.register_handler(orientation_handler)
-
-        normal_handler = FixedAxisTranslation(QtCore.Qt.Key.Key_T)
-        normal_handler.set_model(self._model)
-        self._ui.widgetZinc.register_handler(normal_handler)
 
     def _project_clicked(self):
         self._projected_graphics_available = True
@@ -251,13 +263,24 @@ class MeshProjectionWidget(QtWidgets.QWidget):
                 self._ui.spinBoxPlaneAlpha.setValue(settings["alpha"])
                 self._scene.set_plane_alpha(settings["alpha"])
 
+            if "plane_size" in settings:
+                plane_size = settings["plane_size"]
+                plane_rotation_point = settings["plane_rotation_point"]
+                plane_normal = settings["plane_normal"]
+                self._create_projection_plane(plane_rotation_point, plane_normal, plane_size)
+
     def _save_settings(self):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
+        plane = self._model.get_plane()
+
         settings = {
             "node_size": self._ui.spinBoxNodeSize.value(),
             "alpha": self._ui.spinBoxPlaneAlpha.value(),
+            "plane_size": self._calculate_plane_size(),
+            "plane_rotation_point": plane.getRotationPoint(),
+            "plane_normal": plane.getNormal(),
         }
 
         with open(self._settings_file(), "w") as f:

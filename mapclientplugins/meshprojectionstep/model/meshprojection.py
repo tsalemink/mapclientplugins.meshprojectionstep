@@ -152,7 +152,7 @@ class MeshProjectionModel(object):
         self._plane = ZincPlane(field_module)
         self._plane.setPlaneEquation(plane_normal, point_on_plane)
 
-        max_dimension = max(plane_size)
+        max_dimension = plane_size
         half_max_dimension = max_dimension / 2
         p_h_m_d = half_max_dimension
         n_h_m_d = -half_max_dimension
