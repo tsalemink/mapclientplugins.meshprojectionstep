@@ -45,7 +45,7 @@ combo-boxes in the `Graphics Coordinates` section if required. If the mesh EX fi
 Visibility
 ^^^^^^^^^^
 
-There are a number of check-boxes in the `Visibility` section of the UI. Initially, only `Mesh` and `Markers` (data-points) are enabled -
+There are a number of check-boxes in the `Visibility` section of the user interface (UI). Initially, only `Mesh` and `Markers` (data-points) are enabled -
 as these are the only graphics that have been created at this point. The check-boxes for the `Surfaces` (projection plane), `Projected Mesh`
 and `Projected Markers` will be automatically enabled once the associated graphics have been initialised.
 
@@ -76,7 +76,7 @@ automatically create a projection plane and visualise a bounded segment of that 
 
    **Mesh Projection** step with auto-generated projection plane.
 
-At this point, we should have a valid projection plane - as in the figure above - and we can project our input mesh onto this plane using
+At this point, we should have a valid projection plane - as in :numref:`this figure <fig-mesh-projection-plane>` - and we can project our input mesh onto this plane using
 the `Project` button in the `Projection` section.
 
 .. _fig-mesh-projection-projection:
@@ -126,5 +126,5 @@ for these classes - found under `Handlers`.
 Finishing
 ^^^^^^^^^
 
-Clicking the `Continue` button will output the mesh projection as well as any projected markers (data-points) to a `Zinc` EX file and will
+Clicking the `Continue` button will output the mesh projection as well as any projected markers (data-points) to a `Zinc` EXF file and will
 execute any additional workflow steps connected to the **Mesh Projection** step.
