@@ -181,12 +181,10 @@ class MeshProjectionModel(object):
             project_nodes(self._projected_region, point_on_plane, plane_normal, node_coordinate_field_name)
 
     def reset_projection(self):
-        projection_field_module = self._projected_region.getFieldmodule()
-        projection_nodes = projection_field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        projection_nodes.destroyAllNodes()
-
         fm = self._projected_region.getFieldmodule()
         with ChangeManager(fm):
+            projection_nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
+            projection_nodes.destroyAllNodes()
             self._projected_region.readFile(self._mesh_file_location)
 
     def reset_projection_region(self):
