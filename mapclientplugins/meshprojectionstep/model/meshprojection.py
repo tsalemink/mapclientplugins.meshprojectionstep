@@ -1,4 +1,6 @@
-from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix
+import math
+
+from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix, mult, sub
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
@@ -8,22 +10,37 @@ from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
 
 
+def _write_to_buffer(region):
+    sir = region.createStreaminformationRegion()
+    srm = sir.createStreamresourceMemory()
+    region.write(sir)
+    result, buffer = srm.getBuffer()
+    return buffer
+
+
+def _read_from_buffer(region, buffer):
+    temp_sir = region.createStreaminformationRegion()
+    temp_sir.createStreamresourceMemoryBuffer(buffer)
+    region.read(temp_sir)
+
+
 class MeshProjectionModel(object):
 
     def __init__(self):
+        self._mesh = None
         self._mesh_coordinates_field = None
         self._mesh_file_location = None
-        self._mesh = None
+        self._plane = None
+        self._preview_region = None
 
         self._context = Context("MeshProjection")
+        self._output_context = Context("OutputProjection")
         self._root_region = self._context.getDefaultRegion()
 
         self._label_region = self._root_region.createChild("_label")
         self._mesh_region = self._root_region.createChild("mesh")
         self._projected_region = self._root_region.createChild("projected")
         self._projection_plane_region = self._root_region.createChild("projection_plane")
-
-        self._plane = None
 
         self.define_standard_materials()
         self.define_standard_glyphs()
@@ -44,6 +61,9 @@ class MeshProjectionModel(object):
 
     def get_context(self):
         return self._context
+
+    def get_output_context(self):
+        return self._output_context
 
     def get_mesh_coordinates(self):
         return self._mesh_coordinates_field
@@ -97,7 +117,11 @@ class MeshProjectionModel(object):
     def get_mesh(self):
         return self._mesh
 
-    def write_projected_mesh(self, location, node_coordinate_field_name, datapoint_coordinate_field_name):
+    def _create_projection_region_copy(self, node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle):
+        region = self._output_context.createRegion()
+        buffer = _write_to_buffer(self._projected_region)
+        _read_from_buffer(region, buffer)
+
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
         plane_normal = self._plane.getNormal()
@@ -106,14 +130,22 @@ class MeshProjectionModel(object):
 
         rotation_point = self._plane.getRotationPoint()
         delta = [-component for component in rotation_point]
-        if datapoint_coordinate_field_name:
-            rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name, datapoint_coordinate_field_name)
-            translate_nodes(self._projected_region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
-        else:
-            rotate_nodes(self._projected_region, rot_mx, rotation_point, node_coordinate_field_name)
-            translate_nodes(self._projected_region, delta, node_coordinate_field_name)
 
-        self._projected_region.writeFile(location)
+        rotate_nodes(region, rot_mx, rotation_point, node_coordinate_field_name, datapoint_coordinate_field_name)
+        translate_nodes(region, delta, node_coordinate_field_name, datapoint_coordinate_field_name)
+
+        rot_mx = axis_angle_to_rotation_matrix(xy_normal, projection_final_angle)
+        rotate_nodes(region, rot_mx, [0, 0, 0], node_coordinate_field_name, datapoint_coordinate_field_name)
+
+        return region
+
+    def write_projected_mesh(self, location, node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle):
+        output_region = self._create_projection_region_copy(node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle)
+        output_region.writeFile(location)
+
+    def preview_projected_mesh(self, node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle):
+        self._preview_region = self._create_projection_region_copy(node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle)
+        return self._preview_region
 
     def _create_selection_filter(self):
         m = self._context.getScenefiltermodule()
@@ -128,15 +160,15 @@ class MeshProjectionModel(object):
         """
         Helper method to define the standard glyphs
         """
-        glyph_module = self._context.getGlyphmodule()
-        glyph_module.defineStandardGlyphs()
+        self._context.getGlyphmodule().defineStandardGlyphs()
+        self._output_context.getGlyphmodule().defineStandardGlyphs()
 
     def define_standard_materials(self):
         """
         Helper method to define the standard materials.
         """
-        material_module = self._context.getMaterialmodule()
-        material_module.defineStandardMaterials()
+        self._context.getMaterialmodule().defineStandardMaterials()
+        self._output_context.getMaterialmodule().defineStandardMaterials()
 
     def evaluate_nodes_minima_and_maxima(self):
         fm = self._mesh_region.getFieldmodule()
