@@ -13,13 +13,12 @@ from PySide6 import QtWidgets, QtCore
 from cmlibs.maths.vectorops import magnitude
 from cmlibs.utils.zinc.finiteelement import is_field_defined_for_nodeset
 from cmlibs.widgets.handlers.fixed import Fixed
+from cmlibs.zinc.field import Field
 
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.sceneselection import SceneSelection
 from cmlibs.widgets.handlers.orientation import Orientation
 from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
-from cmlibs.widgets.handlers.zoomonly import ZoomOnly
-from cmlibs.zinc.field import Field
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
@@ -279,28 +278,25 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._model.reset_label_region()
 
     def _load_settings(self):
+        settings = {}
         if os.path.isfile(self._settings_file()):
             with open(self._settings_file()) as f:
                 settings = json.load(f)
 
-            if "node_size" in settings:
-                self._ui.spinBoxNodeSize.setValue(settings["node_size"])
-                self._scene.set_node_size(settings["node_size"])
-            if "alpha" in settings:
-                self._ui.spinBoxPlaneAlpha.setValue(settings["alpha"])
-                self._scene.set_plane_alpha(settings["alpha"])
+        self._ui.spinBoxNodeSize.setValue(settings.get("node_size", 2.0))
+        self._ui.spinBoxPlaneAlpha.setValue(settings.get("alpha", 1.0))
 
-            if "plane_size" in settings:
-                plane_size = settings["plane_size"]
-                plane_rotation_point = settings["plane_rotation_point"]
-                plane_normal = settings["plane_normal"]
-                self._create_projection_plane(plane_rotation_point, plane_normal, plane_size)
+        if "plane_size" in settings:
+            plane_size = settings["plane_size"]
+            plane_rotation_point = settings["plane_rotation_point"]
+            plane_normal = settings["plane_normal"]
+            self._create_projection_plane(plane_rotation_point, plane_normal, plane_size)
 
-            self._ui.sliderFinalOrientation.blockSignals(True)
-            value = settings.get("final_orientation", 0.0)
-            self._ui.sliderFinalOrientation.setValue(value)
-            self._ui.sliderFinalOrientation.setToolTip(f"{value} (degrees)")
-            self._ui.sliderFinalOrientation.blockSignals(False)
+        self._ui.sliderFinalOrientation.blockSignals(True)
+        value = settings.get("final_orientation", 0.0)
+        self._ui.sliderFinalOrientation.setValue(value)
+        self._ui.sliderFinalOrientation.setToolTip(f"{value} (degrees)")
+        self._ui.sliderFinalOrientation.blockSignals(False)
 
     def _save_settings(self):
         if not os.path.exists(self._location):
