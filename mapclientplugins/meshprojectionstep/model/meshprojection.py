@@ -1,27 +1,12 @@
-import math
-
 from cmlibs.maths.vectorops import add, cross, matrix_vector_mult, angle, axis_angle_to_rotation_matrix, mult, sub
 from cmlibs.utils.zinc.field import create_field_coordinates
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range, create_square_element
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.utils.zinc.node import project_nodes, rotate_nodes, translate_nodes, get_field_values
 from cmlibs.utils.geometry.plane import ZincPlane
+from cmlibs.utils.zinc.region import write_to_buffer, read_from_buffer
 from cmlibs.zinc.context import Context
 from cmlibs.zinc.field import Field
-
-
-def _write_to_buffer(region):
-    sir = region.createStreaminformationRegion()
-    srm = sir.createStreamresourceMemory()
-    region.write(sir)
-    result, buffer = srm.getBuffer()
-    return buffer
-
-
-def _read_from_buffer(region, buffer):
-    temp_sir = region.createStreaminformationRegion()
-    temp_sir.createStreamresourceMemoryBuffer(buffer)
-    region.read(temp_sir)
 
 
 class MeshProjectionModel(object):
@@ -119,8 +104,8 @@ class MeshProjectionModel(object):
 
     def _create_projection_region_copy(self, node_coordinate_field_name, datapoint_coordinate_field_name, projection_final_angle):
         region = self._output_context.createRegion()
-        buffer = _write_to_buffer(self._projected_region)
-        _read_from_buffer(region, buffer)
+        buffer = write_to_buffer(self._projected_region)
+        read_from_buffer(region, buffer)
 
         # Rotate to the x-y plane.
         xy_normal = [0, 0, 1]
