@@ -3,19 +3,22 @@ Created: April, 2023
 
 @author: tsalemink
 """
+import math
 import os
 import json
 
 import numpy as np
 from PySide6 import QtWidgets, QtCore
+
 from cmlibs.maths.vectorops import magnitude
 from cmlibs.utils.zinc.finiteelement import is_field_defined_for_nodeset
+from cmlibs.widgets.handlers.fixed import Fixed
+from cmlibs.zinc.field import Field
 
 from cmlibs.widgets.handlers.scenemanipulation import SceneManipulation
 from cmlibs.widgets.handlers.sceneselection import SceneSelection
 from cmlibs.widgets.handlers.orientation import Orientation
 from cmlibs.widgets.handlers.fixedaxistranslation import FixedAxisTranslation
-from cmlibs.zinc.field import Field
 
 from mapclientplugins.meshprojectionstep.view.ui_meshprojectionwidget import Ui_MeshProjectionWidget
 from mapclientplugins.meshprojectionstep.scene.meshprojection import MeshProjectionScene
@@ -79,6 +82,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.widgetZinc.register_handler(SceneManipulation())
         self._ui.widgetZinc.register_handler(SceneSelection(QtCore.Qt.Key.Key_S))
 
+        self._ui.widgetZincPreview.set_context(model.get_output_context())
+        self._ui.widgetZincPreview.register_handler(Fixed())
+
         self._projected_graphics_available = False
 
         self._update_ui()
@@ -126,6 +132,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._ui.checkBoxProjectedMarkersVisibility.stateChanged.connect(self._scene.set_projected_markers_visibility)
         self._ui.spinBoxNodeSize.valueChanged.connect(self._scene.set_node_size)
         self._ui.spinBoxPlaneAlpha.valueChanged.connect(self._scene.set_plane_alpha)
+        self._ui.sliderFinalOrientation.valueChanged.connect(self._final_orientation_value_changed)
         self._ui.pushButtonAutoAlignPlane.clicked.connect(self._auto_align_clicked)
         self._ui.pushButtonProject.clicked.connect(self._project_clicked)
 
@@ -136,6 +143,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
 
         self._ui.checkBoxProjectedMeshVisibility.setEnabled(self._projected_graphics_available)
         self._ui.checkBoxProjectedMarkersVisibility.setEnabled(self._projected_graphics_available)
+        self._ui.sliderFinalOrientation.setEnabled(self._projected_graphics_available)
 
     def _register_plane_handlers(self):
         if not self._plane_handlers_registered:
@@ -186,10 +194,9 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         if not os.path.exists(self._location):
             os.makedirs(self._location)
 
-        node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
-        datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
-        self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name)
+        node_coordinate_field_name, datapoint_coordinate_field_name = self._current_coordinate_field_names()
+        theta = self._ui.sliderFinalOrientation.value() * math.pi / 180
+        self._model.write_projected_mesh(self.get_output_file(), node_coordinate_field_name, datapoint_coordinate_field_name, theta)
         self._reset_projection()
 
     def _reset_projection(self):
@@ -225,19 +232,38 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._register_plane_handlers()
         self._update_ui()
 
-    def _project_clicked(self):
-        self._projected_graphics_available = True
+    def _current_coordinate_field_names(self):
         node_coordinate_field_name = self._ui.comboBoxNodeCoordinateField.currentData().getName()
         datapoint_coordinate_field = self._ui.comboBoxDatapointCoordinateField.currentData()
-        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else None
+        # If no datapoint coordinate field is defined set the default that is going to be used anyway.
+        datapoint_coordinate_field_name = datapoint_coordinate_field.getName() if datapoint_coordinate_field else "coordinates"
+        return node_coordinate_field_name, datapoint_coordinate_field_name
+
+    def _update_preview(self):
+        node_coordinate_field_name, datapoint_coordinate_field_name = self._current_coordinate_field_names()
+        theta = self._ui.sliderFinalOrientation.value() * math.pi / 180
+        preview_region = self._model.preview_projected_mesh(node_coordinate_field_name, datapoint_coordinate_field_name, theta)
+        preview_scene = self._scene.visualise_preview(preview_region, node_coordinate_field_name, datapoint_coordinate_field_name)
+        self._ui.widgetZincPreview.set_scene(preview_scene)
+        self._ui.widgetZincPreview.view_all()
+
+    def _project_clicked(self):
+        self._projected_graphics_available = True
+        node_coordinate_field_name, datapoint_coordinate_field_name = self._current_coordinate_field_names()
         self._model.project(node_coordinate_field_name, datapoint_coordinate_field_name)
         self._scene.visualise_projected_graphics(node_coordinate_field_name, datapoint_coordinate_field_name)
+
+        self._update_preview()
 
         # Use check-box states for visibility.
         self._scene.set_projected_mesh_visibility(self._ui.checkBoxProjectedMeshVisibility.isChecked())
         self._scene.set_projected_markers_visibility(self._ui.checkBoxProjectedMarkersVisibility.isChecked())
 
         self._update_ui()
+
+    def _final_orientation_value_changed(self, value):
+        self._ui.sliderFinalOrientation.setToolTip(f"{value} (degrees)")
+        self._update_preview()
 
     def _view_all_button_clicked(self):
         self._ui.widgetZinc.view_all()
@@ -252,22 +278,25 @@ class MeshProjectionWidget(QtWidgets.QWidget):
         self._model.reset_label_region()
 
     def _load_settings(self):
+        settings = {}
         if os.path.isfile(self._settings_file()):
             with open(self._settings_file()) as f:
                 settings = json.load(f)
 
-            if "node_size" in settings:
-                self._ui.spinBoxNodeSize.setValue(settings["node_size"])
-                self._scene.set_node_size(settings["node_size"])
-            if "alpha" in settings:
-                self._ui.spinBoxPlaneAlpha.setValue(settings["alpha"])
-                self._scene.set_plane_alpha(settings["alpha"])
+        self._ui.spinBoxNodeSize.setValue(settings.get("node_size", 2.0))
+        self._ui.spinBoxPlaneAlpha.setValue(settings.get("alpha", 1.0))
 
-            if "plane_size" in settings:
-                plane_size = settings["plane_size"]
-                plane_rotation_point = settings["plane_rotation_point"]
-                plane_normal = settings["plane_normal"]
-                self._create_projection_plane(plane_rotation_point, plane_normal, plane_size)
+        if "plane_size" in settings:
+            plane_size = settings["plane_size"]
+            plane_rotation_point = settings["plane_rotation_point"]
+            plane_normal = settings["plane_normal"]
+            self._create_projection_plane(plane_rotation_point, plane_normal, plane_size)
+
+        self._ui.sliderFinalOrientation.blockSignals(True)
+        value = settings.get("final_orientation", 0.0)
+        self._ui.sliderFinalOrientation.setValue(value)
+        self._ui.sliderFinalOrientation.setToolTip(f"{value} (degrees)")
+        self._ui.sliderFinalOrientation.blockSignals(False)
 
     def _save_settings(self):
         if not os.path.exists(self._location):
@@ -281,6 +310,7 @@ class MeshProjectionWidget(QtWidgets.QWidget):
             "plane_size": self._calculate_plane_size(),
             "plane_rotation_point": plane.getRotationPoint(),
             "plane_normal": plane.getNormal(),
+            "final_orientation": self._ui.sliderFinalOrientation.value(),
         }
 
         with open(self._settings_file(), "w") as f:

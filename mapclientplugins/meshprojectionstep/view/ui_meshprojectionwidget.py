@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshprojectionwidget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.5.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
     QFrame, QGridLayout, QGroupBox, QHBoxLayout,
-    QLabel, QPushButton, QSizePolicy, QSpacerItem,
-    QVBoxLayout, QWidget)
+    QLabel, QPushButton, QSizePolicy, QSlider,
+    QSpacerItem, QVBoxLayout, QWidget)
 
 from cmlibs.widgets.basesceneviewerwidget import BaseSceneviewerWidget
 
@@ -103,10 +103,6 @@ class Ui_MeshProjectionWidget(object):
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.horizontalLayout_3.addItem(self.horizontalSpacer_5)
-
         self.pushButtonAutoAlignPlane = QPushButton(self.groupBoxProjection)
         self.pushButtonAutoAlignPlane.setObjectName(u"pushButtonAutoAlignPlane")
 
@@ -116,23 +112,34 @@ class Ui_MeshProjectionWidget(object):
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_6)
 
+        self.pushButtonProject = QPushButton(self.groupBoxProjection)
+        self.pushButtonProject.setObjectName(u"pushButtonProject")
+
+        self.horizontalLayout_3.addWidget(self.pushButtonProject)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.horizontalSpacer_7 = QSpacerItem(37, 17, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.labelMinus180 = QLabel(self.groupBoxProjection)
+        self.labelMinus180.setObjectName(u"labelMinus180")
 
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_7)
+        self.horizontalLayout_4.addWidget(self.labelMinus180)
 
-        self.pushButtonProject = QPushButton(self.groupBoxProjection)
-        self.pushButtonProject.setObjectName(u"pushButtonProject")
+        self.sliderFinalOrientation = QSlider(self.groupBoxProjection)
+        self.sliderFinalOrientation.setObjectName(u"sliderFinalOrientation")
+        self.sliderFinalOrientation.setMinimum(-180)
+        self.sliderFinalOrientation.setMaximum(180)
+        self.sliderFinalOrientation.setTracking(True)
+        self.sliderFinalOrientation.setOrientation(Qt.Orientation.Horizontal)
 
-        self.horizontalLayout_4.addWidget(self.pushButtonProject)
+        self.horizontalLayout_4.addWidget(self.sliderFinalOrientation)
 
-        self.horizontalSpacer_8 = QSpacerItem(37, 17, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.labelPlus180 = QLabel(self.groupBoxProjection)
+        self.labelPlus180.setObjectName(u"labelPlus180")
 
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_8)
+        self.horizontalLayout_4.addWidget(self.labelPlus180)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_4)
@@ -224,9 +231,22 @@ class Ui_MeshProjectionWidget(object):
 
         self.verticalLayout_2.addWidget(self.groupBoxVisibility)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.groupBoxPreview = QGroupBox(MeshProjectionWidget)
+        self.groupBoxPreview.setObjectName(u"groupBoxPreview")
+        self.horizontalLayout_7 = QHBoxLayout(self.groupBoxPreview)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.widgetZincPreview = BaseSceneviewerWidget(self.groupBoxPreview)
+        self.widgetZincPreview.setObjectName(u"widgetZincPreview")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
+        sizePolicy3.setHorizontalStretch(3)
+        sizePolicy3.setVerticalStretch(1)
+        sizePolicy3.setHeightForWidth(self.widgetZincPreview.sizePolicy().hasHeightForWidth())
+        self.widgetZincPreview.setSizePolicy(sizePolicy3)
 
-        self.verticalLayout_2.addItem(self.verticalSpacer)
+        self.horizontalLayout_7.addWidget(self.widgetZincPreview)
+
+
+        self.verticalLayout_2.addWidget(self.groupBoxPreview)
 
         self.groupBoxView = QGroupBox(MeshProjectionWidget)
         self.groupBoxView.setObjectName(u"groupBoxView")
@@ -273,11 +293,11 @@ class Ui_MeshProjectionWidget(object):
 
         self.widgetZinc = BaseSceneviewerWidget(MeshProjectionWidget)
         self.widgetZinc.setObjectName(u"widgetZinc")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy3.setHorizontalStretch(3)
-        sizePolicy3.setVerticalStretch(1)
-        sizePolicy3.setHeightForWidth(self.widgetZinc.sizePolicy().hasHeightForWidth())
-        self.widgetZinc.setSizePolicy(sizePolicy3)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy4.setHorizontalStretch(3)
+        sizePolicy4.setVerticalStretch(1)
+        sizePolicy4.setHeightForWidth(self.widgetZinc.sizePolicy().hasHeightForWidth())
+        self.widgetZinc.setSizePolicy(sizePolicy4)
 
         self.horizontalLayout_5.addWidget(self.widgetZinc)
 
@@ -297,6 +317,8 @@ class Ui_MeshProjectionWidget(object):
         self.groupBoxProjection.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Projection", None))
         self.pushButtonAutoAlignPlane.setText(QCoreApplication.translate("MeshProjectionWidget", u"Auto Align Plane", None))
         self.pushButtonProject.setText(QCoreApplication.translate("MeshProjectionWidget", u"Project", None))
+        self.labelMinus180.setText(QCoreApplication.translate("MeshProjectionWidget", u"-180 (deg)", None))
+        self.labelPlus180.setText(QCoreApplication.translate("MeshProjectionWidget", u"180 (deg)", None))
         self.groupBoxVisibility.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Visibility", None))
         self.checkBoxSurfacesVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Surfaces", None))
         self.checkBoxMeshVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Mesh", None))
@@ -305,6 +327,7 @@ class Ui_MeshProjectionWidget(object):
         self.checkBoxProjectedMarkersVisibility.setText(QCoreApplication.translate("MeshProjectionWidget", u"Projected Markers", None))
         self.labelNodeSize.setText(QCoreApplication.translate("MeshProjectionWidget", u"Node Size:", None))
         self.labelPlaneAlpha.setText(QCoreApplication.translate("MeshProjectionWidget", u"Plane Alpha:", None))
+        self.groupBoxPreview.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"Preview", None))
         self.groupBoxView.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"View", None))
         self.pushButtonViewAll.setText(QCoreApplication.translate("MeshProjectionWidget", u"View All", None))
         self.groupBoxGeneral.setTitle(QCoreApplication.translate("MeshProjectionWidget", u"General", None))

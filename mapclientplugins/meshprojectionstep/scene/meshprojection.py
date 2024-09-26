@@ -67,6 +67,7 @@ class MeshProjectionScene(object):
         self._projected_node_graphics = None
         self._projected_mesh_graphics = None
         self._marker_graphics = None
+        self._preview_graphics = None
         self._projected_marker_graphics = None
         self._selection_graphics = None
         self._not_field = None
@@ -215,6 +216,22 @@ class MeshProjectionScene(object):
         region = self._model.get_projection_plane_region()
         self._surface_graphics = _create_surface_graphics(region)
         self._surface_graphics.setMaterial(self._surface_material)
+
+    @staticmethod
+    def visualise_preview(region, mesh_coordinate_field_name, datapoint_coordinate_field_name):
+        fm = region.getFieldmodule()
+        mesh_coordinates = fm.findFieldByName(mesh_coordinate_field_name)
+        scene = region.getScene()
+        mm = scene.getMaterialmodule()
+        blue = mm.findMaterialByName('blue')
+
+        scene = region.getScene()
+        with ChangeManager(scene):
+            preview_graphics = scene.createGraphicsLines()
+            preview_graphics.setCoordinateField(mesh_coordinates)
+            preview_graphics.setMaterial(blue)
+
+        return scene
 
     def visualise_projected_graphics(self, mesh_coordinate_field_name, marker_coordinate_field_name):
         region = self._model.get_projected_region()
