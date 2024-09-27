@@ -42,9 +42,8 @@ That is, you should see lines of your mesh displayed with yellow lines and white
 Graphics Coordinates
 ^^^^^^^^^^^^^^^^^^^^
 
-The coordinate fields used for the mesh and marker (data-point) definitions are determined automatically, but can be changed using the
-combo-boxes in the `Graphics Coordinates` section if required. If the mesh EX file input does not contain any data-points, the
-`Datapoint Coordinate Field` combo-box will be empty, and no data-points will be displayed.
+The coordinate fields used for the mesh and marker (data-point) definitions are determined automatically, but can be changed using the combo-boxes in the `Graphics Coordinates` section if required.
+If the mesh EX file input does not contain any data-points, the `Datapoint Coordinate Field` combo-box will be empty, and no data-points will be displayed.
 
 Projection
 ^^^^^^^^^^
